@@ -139,27 +139,22 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     end
   end
 
-
   describe "show" do
     let(:company) { create(:company) }
 
     context "when unauthorized" do
-      it "returns scim+json content type" do
-        get :show, params: { id: 1 }
+      before { get :show, params: { id: 1 } }
 
+      it "returns scim+json content type" do
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "fails with no credentials" do
-        get :show, params: { id: 1 }
-
         expect(response.status).to eq 401
       end
 
       it "fails with invalid credentials" do
         request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials("unauthorized","123456")
-
-        get :show, params: { id: 1 }
 
         expect(response.status).to eq 401
       end
@@ -170,15 +165,19 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         http_login(company)
       end
 
+      let!(:target_user) { create(:user, company: company) }
+
+      let!(:unauthorized_company) { create(:company) }
+      let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
+
       it "returns scim+json content type" do
-        get :show, params: { id: 1 }
+        get :show, params: { id: target_user.id }
 
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "is successful with valid credentials" do
-        create(:user, id: 1, company: company)
-        get :show, params: { id: 1 }
+        get :show, params: { id: target_user.id }
 
         expect(response.status).to eq 200
       end
@@ -190,43 +189,37 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns :not_found for a correct id but unauthorized company" do
-        new_company = create(:company)
-        create(:user, company: new_company, id: 1)
-
-        get :show, params: { id: 1 }
+        get :show, params: { id: unauthorized_user.id }
 
         expect(response.status).to eq 404
       end
     end
   end
 
-
   describe "create" do
     let(:company) { create(:company) }
 
     context "when unauthorized" do
-      it "returns scim+json content type" do
-        post :create
+      before { post :create }
 
+      it "returns scim+json content type" do
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "fails with no credentials" do
-        post :create
-
         expect(response.status).to eq 401
       end
 
       it "fails with invalid credentials" do
         request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials("unauthorized","123456")
 
-        post :create
-
         expect(response.status).to eq 401
       end
     end
 
     context "when authorized" do
+      let(:company_user) { company.users.first }
+
       before :each do
         http_login(company)
       end
@@ -264,12 +257,11 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         expect(response.status).to eq 201
         expect(company.users.count).to eq 1
-        user = company.users.first
-        expect(user.persisted?).to eq true
-        expect(user.first_name).to eq "New"
-        expect(user.last_name).to eq "User"
-        expect(user.email).to eq "new@example.com"
-        expect(user.random_attribute).to eq true
+        expect(company_user.persisted?).to eq true
+        expect(company_user.first_name).to eq "New"
+        expect(company_user.last_name).to eq "User"
+        expect(company_user.email).to eq "new@example.com"
+        expect(company_user.random_attribute).to eq true
       end
 
       it "ignores unconfigured params" do
@@ -323,7 +315,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         expect(response.status).to eq 201
         expect(company.users.count).to eq 1
-        expect(company.users.first.first_name).to eq "Not New"
+        expect(company_user.first_name).to eq "Not New"
       end
 
       it "returns 409 if user already exists and config.scim_user_prevent_update_on_create is set to true" do
@@ -364,33 +356,27 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         expect(response.status).to eq 201
         expect(company.users.count).to eq 1
-        user = company.users.first
-        expect(user.archived?).to eq true
+        expect(company_user.archived?).to eq true
       end
     end
   end
-
 
   describe "put update" do
     let(:company) { create(:company) }
 
     context "when unauthorized" do
-      it "returns scim+json content type" do
-        put :put_update, params: { id: 1 }
+      before { put :put_update, params: { id: 1 } }
 
+      it "returns scim+json content type" do
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "fails with no credentials" do
-        put :put_update, params: { id: 1 }
-
         expect(response.status).to eq 401
       end
 
       it "fails with invalid credentials" do
         request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials("unauthorized","123456")
-
-        put :put_update, params: { id: 1 }
 
         expect(response.status).to eq 401
       end
@@ -465,27 +451,22 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     end
   end
 
-
   describe "patch update" do
     let(:company) { create(:company) }
 
     context "when unauthorized" do
-      it "returns scim+json content type" do
-        patch :patch_update, params: patch_params(id: 1)
+      before { patch :patch_update, params: patch_params(id: 1) }
 
+      it "returns scim+json content type" do
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "fails with no credentials" do
-        patch :patch_update, params: patch_params(id: 1)
-
         expect(response.status).to eq 401
       end
 
       it "fails with invalid credentials" do
         request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials("unauthorized","123456")
-
-        patch :patch_update, params: patch_params(id: 1)
 
         expect(response.status).to eq 401
       end
@@ -494,6 +475,9 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     context "when authorized" do
       let!(:user) { create(:user, id: 1, company: company) }
       let(:company_user) { company.users.first }
+
+      let!(:unauthorized_company) { create(:company) }
+      let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
 
       before :each do
         http_login(company)
@@ -518,10 +502,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns :not_found for a correct id but unauthorized company" do
-        new_company = create(:company)
-        create(:user, company: new_company, id: 1000)
-
-        get :patch_update, params: patch_params(id: 1000)
+        get :patch_update, params: patch_params(id: unauthorized_company.id)
 
         expect(response.status).to eq 404
       end
@@ -575,9 +556,6 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         let(:new_email) { Faker::Internet.email }
 
-        let(:final_given_name) { Faker::Name.first_name }
-        let(:final_family_name) { Faker::Name.last_name }
-
         it 'changes only name' do
           patch :patch_update, params: {
             id: 1,
@@ -628,8 +606,8 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
                 op: "replace",
                 value: {
                   name: {
-                    givenName: new_given_name,
-                    familyName: new_family_name
+                    givenName: 'hotdog',
+                    familyName: 'hamburger'
                   }
                 }
               },
@@ -637,8 +615,8 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
                 op: "replace",
                 value: {
                   name: {
-                    givenName: final_given_name,
-                    familyName: final_family_name
+                    givenName: new_given_name,
+                    familyName: new_family_name
                   }
                 }
               }
@@ -646,13 +624,12 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
           }
 
           expect(response.status).to eq(200)
-          expect(company_user.first_name).to eq(final_given_name)
-          expect(company_user.last_name).to eq(final_family_name)
+          expect(company_user.first_name).to eq(new_given_name)
+          expect(company_user.last_name).to eq(new_family_name)
         end
       end
     end
   end
-
 
   describe "delete" do
     let(:company) { create(:company) }
@@ -675,36 +652,31 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     end
 
     context 'when authorized' do
-      let(:user_id) { 1 }
-      let(:invalid_id) { "invalid_id" }
-
-      let!(:user) { create(:user, id: user_id, company: company) }
+      let!(:user) { create(:user, company: company) }
 
       before :each do
         http_login(company)
       end
 
       it "returns :not_found for invalid id" do
-        delete :delete, params: { id: invalid_id }
+        delete :delete, params: { id: "invalid_id" }
 
         expect(response.status).to eq(404)
       end
 
       context "with unauthorized user" do
-        let(:unauthorized_id) { 2 }
-
-        let!(:new_company) { create(:company) }
-        let!(:unauthorized_user) { create(:user, company: new_company, id: unauthorized_id) }
+        let!(:unauthorized_company) { create(:company) }
+        let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
 
         it "returns :not_found for correct id but unauthorized company" do
-          delete :delete, params: { id: unauthorized_id }
+          delete :delete, params: { id: unauthorized_user.id }
           
           expect(response.status).to eq(404)
         end
       end
 
       it "successfully deletes for correct id provided" do
-        delete :delete, params: { id: user_id }
+        delete :delete, params: { id: user.id }
 
         expect(response.status).to eq(204)
         expect(User.count).to eq(0)
