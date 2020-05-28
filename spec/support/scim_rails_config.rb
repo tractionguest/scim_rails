@@ -99,11 +99,11 @@ ScimRails.configure do |config|
   }
 
   config.before_scim_response = lambda do |body|
-    print "BEFORE SCIM RESPONSE #{body}"
+
   end
 
   config.after_scim_response = lambda do |object, status|
-    print "#{object} #{status}"
+
   end
 
 end
