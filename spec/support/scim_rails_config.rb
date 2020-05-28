@@ -25,6 +25,8 @@ ScimRails.configure do |config|
   config.group_deprovision_method = :archive!
   config.group_reprovision_method = :unarchive!
 
+  config.canonical_reference = :id
+
   config.mutable_user_attributes = [
     :first_name,
     :last_name,

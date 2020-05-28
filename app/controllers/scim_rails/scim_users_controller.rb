@@ -57,7 +57,7 @@ module ScimRails
     def show
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(ScimRails.config.scim_users_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
 
       ScimRails.config.after_scim_response.call(user, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
 
@@ -67,7 +67,7 @@ module ScimRails
     def put_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(ScimRails.config.scim_users_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
       update_status(user) unless put_active_param.nil?
       user.update!(permitted_params(params))
 
@@ -79,7 +79,7 @@ module ScimRails
     def patch_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(ScimRails.config.scim_users_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
 
       params["Operations"].each do |operation|
         raise ScimRails::ExceptionHandler::UnsupportedPatchRequest if operation["op"] != "replace"
@@ -105,7 +105,7 @@ module ScimRails
     def delete
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(ScimRails.config.scim_users_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
       user.delete
 
       ScimRails.config.after_scim_response.call(user, "DELETED") unless ScimRails.config.after_scim_response.nil?

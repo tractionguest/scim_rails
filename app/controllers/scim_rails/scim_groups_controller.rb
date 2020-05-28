@@ -52,7 +52,7 @@ module ScimRails
     def show
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = @company.public_send(ScimRails.config.scim_groups_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
 
       ScimRails.config.after_scim_response.call(group, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
 
@@ -62,7 +62,7 @@ module ScimRails
     def put_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = @company.public_send(ScimRails.config.scim_groups_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
 
       put_error_check
 
@@ -84,7 +84,7 @@ module ScimRails
     def patch_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = @company.public_send(ScimRails.config.scim_groups_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
 
       params["Operations"].each do |operation|
         case operation["op"]
@@ -107,7 +107,7 @@ module ScimRails
     def delete
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = @company.public_send(ScimRails.config.scim_groups_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{params[:id]}\""
       group.delete
 
       ScimRails.config.after_scim_response.call(group, "DELETED") unless ScimRails.config.after_scim_response.nil?

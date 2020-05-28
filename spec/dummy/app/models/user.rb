@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   belongs_to :company
 
+  before_save :generate_uuid
+
   has_many :groups_users
   has_many :groups, through: :groups_users
 
@@ -36,5 +38,11 @@ class User < ApplicationRecord
   def unarchive!
     write_attribute(:archived_at, nil)
     save!
+  end
+
+  private
+
+  def generate_uuid
+    self.uuid ||= SecureRandom.uuid
   end
 end

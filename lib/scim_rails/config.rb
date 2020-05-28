@@ -33,6 +33,7 @@ module ScimRails
       :scim_group_prevent_update_on_create,
       :signing_secret,
       :signing_algorithm,
+      :canonical_reference,
       :user_attributes,
       :user_deprovision_method,
       :user_reprovision_method,
