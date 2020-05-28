@@ -88,5 +88,13 @@ module ScimRails
       raise ScimRails::ExceptionHandler::UnsupportedPatchRequest if active.nil?
       active
     end
+
+    def initial_callback_hook(arg)
+      ScimRails.config.before_scim_response.call(arg) unless ScimRails.config.before_scim_response.nil?
+    end
+
+    def final_callback_hook(arg, status)
+      ScimRails.config.after_scim_response.call(arg, status) unless ScimRails.config.after_scim_response.nil?
+    end
   end
 end
