@@ -74,7 +74,8 @@ module ScimRails
       member_ids = params["members"]&.map{ |member| member["value"] }
 
       group.public_send(ScimRails.config.scim_group_member_scope).clear
-      add_members(group, member_ids)
+
+      add_members(group, member_ids) unless member_ids.blank?
 
       final_callback_hook(group, "UPDATED")
 
@@ -123,15 +124,19 @@ module ScimRails
 
     def member_error_check(members)
       raise ScimRails::ExceptionHandler::InvalidMembers unless (members.is_a?(Array) && array_of_hashes?(members))
+      return if members.blank?
 
       member_ids = members.map{ |member| member["value"] }
 
-      @company.public_send(ScimRails.config.scim_users_scope).find(member_ids)
+      # @company.public_send(ScimRails.config.scim_users_scope).find(member_ids)
+
+      found_users = @company.public_send(ScimRails.config.scim_users_scope).where(ScimRails.config.canonical_reference => member_ids)
+      raise ActiveRecord::RecordNotFound if found_users.empty?
     end
 
     def add_members(group, member_ids)
-      new_member_ids = member_ids - group.public_send(ScimRails.config.scim_group_member_scope).pluck(:id)
-      new_members = @company.public_send(ScimRails.config.scim_users_scope).find(new_member_ids)
+      new_member_ids = member_ids - group.public_send(ScimRails.config.scim_group_member_scope).pluck(ScimRails.config.canonical_reference)
+      new_members = @company.public_send(ScimRails.config.scim_users_scope).where(ScimRails.config.canonical_reference => member_ids)
       
       group.public_send(ScimRails.config.scim_group_member_scope) << new_members if new_members.present?
     end

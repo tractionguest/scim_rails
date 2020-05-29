@@ -171,13 +171,13 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
 
       it "returns scim+json content type" do
-        get :show, params: { id: target_user.id }
+        get :show, params: { id: target_user.uuid }
 
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "is successful with valid credentials" do
-        get :show, params: { id: target_user.id }
+        get :show, params: { id: target_user.uuid }
 
         expect(response.status).to eq 200
       end
@@ -189,7 +189,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns :not_found for a correct id but unauthorized company" do
-        get :show, params: { id: unauthorized_user.id }
+        get :show, params: { id: unauthorized_user.uuid }
 
         expect(response.status).to eq 404
       end
@@ -383,27 +383,30 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     end
 
     context "when authorized" do
-      let!(:user) { create(:user, id: 1, company: company) }
+      let!(:user) { create(:user, company: company) }
+
+      let!(:unauthorized_company) { create(:company) }
+      let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
 
       before :each do
         http_login(company)
       end
 
       it "returns scim+json content type" do
-        put :put_update, params: put_params
+        put :put_update, params: put_params(id: user.uuid)
 
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "is successful with with valid credentials" do
-        put :put_update, params: put_params
+        put :put_update, params: put_params(id: user.uuid)
 
         expect(response.status).to eq 200
       end
 
       it "deprovisions an active record" do
         request.format = "application/scim+json"
-        put :put_update, params: put_params(active: false)
+        put :put_update, params: put_params(id: user.uuid, active: false)
 
         expect(response.status).to eq 200
         expect(user.reload.active?).to eq false
@@ -413,7 +416,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         user.archive!
         expect(user.reload.active?).to eq false
         request.format = "application/scim+json"
-        put :put_update, params: put_params(active: true)
+        put :put_update, params: put_params(id: user.uuid, active: true)
 
         expect(response.status).to eq 200
         expect(user.reload.active?).to eq true
@@ -426,17 +429,14 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns :not_found for a correct id but unauthorized company" do
-        new_company = create(:company)
-        create(:user, company: new_company, id: 1000)
-
-        get :put_update, params: { id: 1000 }
+        get :put_update, params: { id: unauthorized_user.uuid }
 
         expect(response.status).to eq 404
       end
 
       it "is returns 422 with incomplete request" do
         put :put_update, params: {
-          id: 1,
+          id: user.uuid,
           userName: "test@example.com",
           emails: [
             {
@@ -473,7 +473,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     end
 
     context "when authorized" do
-      let!(:user) { create(:user, id: 1, company: company) }
+      let!(:user) { create(:user, company: company) }
       let(:company_user) { company.users.first }
 
       let!(:unauthorized_company) { create(:company) }
@@ -484,13 +484,13 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns scim+json content type" do
-        patch :patch_update, params: patch_params(id: 1)
+        patch :patch_update, params: patch_params(id: user.uuid)
 
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "is successful with valid credentials" do
-        patch :patch_update, params: patch_params(id: 1)
+        patch :patch_update, params: patch_params(id: user.uuid)
 
         expect(response.status).to eq 200
       end
@@ -502,14 +502,14 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "returns :not_found for a correct id but unauthorized company" do
-        get :patch_update, params: patch_params(id: unauthorized_company.id)
+        get :patch_update, params: patch_params(id: unauthorized_user.uuid)
 
         expect(response.status).to eq 404
       end
 
       it "returns 422 error for an op that isn't 'replace'" do
         patch :patch_update, params: {
-          id: 1,
+          id: user.uuid,
           Operations: [
             {
               op: "remove"
@@ -529,7 +529,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         user = company.users.first
         expect(user.archived?).to eq false
 
-        patch :patch_update, params: patch_params(id: 1)
+        patch :patch_update, params: patch_params(id: user.uuid)
 
         expect(response.status).to eq 200
         expect(company.users.count).to eq 1
@@ -542,7 +542,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         user = company.users.first.tap(&:archive!)
         expect(user.archived?).to eq true
 
-        patch :patch_update, params: patch_params(id: 1,  active: true)
+        patch :patch_update, params: patch_params(id: user.uuid,  active: true)
 
         expect(response.status).to eq 200
         expect(company.users.count).to eq 1
@@ -558,7 +558,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         it 'changes only name' do
           patch :patch_update, params: {
-            id: 1,
+            id: user.uuid,
             Operations: [
               {
                 op: "replace",
@@ -579,7 +579,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         it 'changes email' do
            patch :patch_update, params: {
-              id: 1,
+              id: user.uuid,
               Operations: [
                 {
                   op: "replace",
@@ -600,7 +600,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         it 'works with more than one Operation' do
           patch :patch_update, params: {
-            id: 1,
+            id: user.uuid,
             Operations: [
               {
                 op: "replace",
@@ -669,14 +669,14 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
 
         it "returns :not_found for correct id but unauthorized company" do
-          delete :delete, params: { id: unauthorized_user.id }
+          delete :delete, params: { id: unauthorized_user.uuid }
           
           expect(response.status).to eq(404)
         end
       end
 
       it "successfully deletes for correct id provided" do
-        delete :delete, params: { id: user.id }
+        delete :delete, params: { id: user.uuid }
 
         expect(response.status).to eq(204)
         expect(User.count).to eq(0)
@@ -698,9 +698,9 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
     }
   end
 
-  def put_params(active: true)
+  def put_params(id:, active: true)
     {
-      id: 1,
+      id: id,
       userName: "test@example.com",
       name: {
         givenName: "Test",

@@ -25,7 +25,7 @@ ScimRails.configure do |config|
   config.group_deprovision_method = :archive!
   config.group_reprovision_method = :unarchive!
 
-  config.canonical_reference = :id
+  config.canonical_reference = :uuid
 
   config.mutable_user_attributes = [
     :first_name,
@@ -97,7 +97,7 @@ ScimRails.configure do |config|
   }
 
   config.group_member_schema = {
-    value: :id
+    value: config.canonical_reference
   }
 
   config.before_scim_response = lambda do |body|
