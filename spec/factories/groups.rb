@@ -5,5 +5,7 @@ FactoryBot.define do
 
     sequence(:display_name) { |n| "#{Faker::Name.name}#{n}" }
     sequence(:email) { |n| "#{Faker::Internet.email}#{n}" }
+
+    uuid { SecureRandom.uuid }
   end
 end

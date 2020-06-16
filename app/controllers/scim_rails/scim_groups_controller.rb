@@ -1,7 +1,7 @@
 module ScimRails
   class ScimGroupsController < ScimRails::ApplicationController
     def index
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
@@ -20,13 +20,13 @@ module ScimRails
         total: groups.count
       )
 
-      ScimRails.config.after_scim_response.call(groups, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(groups, "RETRIEVED")
 
       json_scim_group_response(object: groups, counts: counts)
     end
 
     def create
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
       group_attributes = permitted_group_params(params)
 
@@ -44,25 +44,25 @@ module ScimRails
 
       update_group_status(group) unless put_active_param.nil?
 
-      ScimRails.config.after_scim_response.call(group, "CREATED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(group, "CREATED")
 
       json_scim_group_response(object: group, status: :created)
     end
 
     def show
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = group_find(params[:id])
 
-      ScimRails.config.after_scim_response.call(group, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(group, "RETRIEVED")
 
       json_scim_group_response(object: group)
     end
 
     def put_update
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = group_find(params[:id])
 
       put_error_check
 
@@ -74,17 +74,18 @@ module ScimRails
       member_ids = params["members"]&.map{ |member| member["value"] }
 
       group.public_send(ScimRails.config.scim_group_member_scope).clear
-      add_members(group, member_ids)
 
-      ScimRails.config.after_scim_response.call(group, "UPDATED") unless ScimRails.config.after_scim_response.nil?
+      add_members(group, member_ids) unless member_ids.blank?
+
+      final_callback_hook(group, "UPDATED")
 
       json_scim_group_response(object: group)
     end
 
     def patch_update
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = group_find(params[:id])
 
       params["Operations"].each do |operation|
         case operation["op"]
@@ -99,35 +100,43 @@ module ScimRails
         end
       end
 
-      ScimRails.config.after_scim_response.call(group, "UPDATED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(group, "UPDATED")
 
       json_scim_group_response(object: group)
     end
 
     def delete
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = group_find(params[:id])
       group.delete
 
-      ScimRails.config.after_scim_response.call(group, "DELETED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(group, "DELETED")
 
       json_scim_group_response(object: nil, status: :no_content)
     end
 
     private
 
+    def group_find(term)
+      @company.public_send(ScimRails.config.scim_groups_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{term}\""
+    end
+
     def member_error_check(members)
       raise ScimRails::ExceptionHandler::InvalidMembers unless (members.is_a?(Array) && array_of_hashes?(members))
+      return if members.blank?
 
       member_ids = members.map{ |member| member["value"] }
 
-      @company.public_send(ScimRails.config.scim_users_scope).find(member_ids)
+      # @company.public_send(ScimRails.config.scim_users_scope).find(member_ids)
+
+      found_users = @company.public_send(ScimRails.config.scim_users_scope).where(ScimRails.config.canonical_reference => member_ids)
+      raise ActiveRecord::RecordNotFound if found_users.empty?
     end
 
     def add_members(group, member_ids)
-      new_member_ids = member_ids - group.public_send(ScimRails.config.scim_group_member_scope).pluck(:id)
-      new_members = @company.public_send(ScimRails.config.scim_users_scope).find(new_member_ids)
+      new_member_ids = member_ids - group.public_send(ScimRails.config.scim_group_member_scope).pluck(ScimRails.config.canonical_reference)
+      new_members = @company.public_send(ScimRails.config.scim_users_scope).where(ScimRails.config.canonical_reference => member_ids)
       
       group.public_send(ScimRails.config.scim_group_member_scope) << new_members if new_members.present?
     end

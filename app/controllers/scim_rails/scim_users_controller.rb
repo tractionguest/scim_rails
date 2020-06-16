@@ -1,8 +1,8 @@
 module ScimRails
   class ScimUsersController < ScimRails::ApplicationController
     def index
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
-
+      initial_callback_hook(request.params)
+      
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
 
@@ -25,13 +25,13 @@ module ScimRails
         total: users.count
       )
 
-      ScimRails.config.after_scim_response.call(users, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(users, "RETRIEVED")
 
       json_scim_response(object: users, counts: counts)
     end
 
     def create
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
       if ScimRails.config.scim_user_prevent_update_on_create
         user = @company.public_send(ScimRails.config.scim_users_scope).create!(permitted_params(params))
@@ -49,37 +49,37 @@ module ScimRails
       end
       update_status(user) unless put_active_param.nil?
 
-      ScimRails.config.after_scim_response.call(user, "CREATED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(user, "CREATED")
 
       json_scim_response(object: user, status: :created)
     end
 
     def show
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = user_find(params[:id])
 
-      ScimRails.config.after_scim_response.call(user, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(user, "RETRIEVED")
 
       json_scim_response(object: user)
     end
 
     def put_update
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = user_find(params[:id])
       update_status(user) unless put_active_param.nil?
       user.update!(permitted_params(params))
 
-      ScimRails.config.after_scim_response.call(user, "UPDATED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(user, "UPDATED")
 
       json_scim_response(object: user)
     end
 
     def patch_update
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = user_find(params[:id])
 
       params["Operations"].each do |operation|
         raise ScimRails::ExceptionHandler::UnsupportedPatchRequest if operation["op"] != "replace"
@@ -97,23 +97,27 @@ module ScimRails
         user.public_send(provision_method)
       end
 
-      ScimRails.config.after_scim_response.call(user, "UPDATED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(user, "UPDATED")
 
       json_scim_response(object: user)
     end
 
     def delete
-      ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
+      initial_callback_hook(request.params)
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = user_find(params[:id])
       user.delete
 
-      ScimRails.config.after_scim_response.call(user, "DELETED") unless ScimRails.config.after_scim_response.nil?
+      final_callback_hook(user, "DELETED")
 
       json_scim_response(object: nil, status: :no_content)
     end
 
     private
+
+    def user_find(term)
+      @company.public_send(ScimRails.config.scim_users_scope).find_by! "#{ScimRails.config.canonical_reference} = \"#{term}\""
+    end
 
     def permitted_params(parameters)
       ScimRails.config.mutable_user_attributes.each.with_object({}) do |attribute, hash|

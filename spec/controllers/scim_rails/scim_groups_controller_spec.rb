@@ -31,6 +31,8 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
       let(:user_list_length) { 3 }
       let(:user_list) { create_list(:user, user_list_length, first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, company: company) }
+      let(:user_uuids) { user_list.map{ |user| user[:uuid] } }
+
       let(:response_body) { JSON.parse(response.body) }
 
       it 'returns scim+json content type' do
@@ -57,7 +59,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
         it 'returns the correct data for members' do
           get :index
-          expect(returned_resource["members"].map{ |res| res["value"] }).to match_array(Array(1..user_list_length))
+          expect(returned_resource["members"].map{ |res| res["value"] }).to match_array(user_uuids)
         end
 
         context 'with filter parameters' do
@@ -160,44 +162,42 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
       let(:user_list_length) { 3 }
       let(:group_name) { Faker::Games::Pokemon.name }
-      let(:invalid_id) { "invalid_id" }
 
       let!(:user_list) { create_list(:user, user_list_length) } 
       let!(:group) { create(:group, display_name: group_name, users: user_list, company: company) }
+      let(:group_member_uuids) { user_list.map{ |user| user[:uuid] } }
 
       let(:returned_resource) { JSON.parse(response.body) }
 
       it "returns scim+json content type" do
-        get :show, params: { id: 1 }
+        get :show, params: { id: group.uuid }
 
         expect(response.content_type).to eq "application/scim+json"
       end
 
       it "returns :not_found for invalid id" do
-        get :show, params: { id: invalid_id }
+        get :show, params: { id: "invalid_id" }
         
         expect(response.status).to eq(404)
       end
 
       context "with unauthorized group" do
-        let(:unauthorized_id) { 2 }
-
         let!(:new_company) { create(:company) }
-        let!(:unauthorized_group) { create(:group, company: new_company, id: unauthorized_id) }
+        let!(:unauthorized_group) { create(:group, company: new_company) }
 
         it "returns :not_found for correct id but unauthorized company" do
-          get :show, params: { id: unauthorized_id }
+          get :show, params: { id: unauthorized_group.uuid }
 
           expect(response.status).to eq(404)
         end
       end
 
       it "is successful with correct id provided" do
-        get :show, params: { id: 1 }
+        get :show, params: { id: group.uuid }
 
         expect(response.status).to eq(200)
         expect(returned_resource["displayName"]).to eq(group_name)
-        expect(returned_resource["members"].map{ |res| res["value"] }).to match_array(Array(1..user_list_length))
+        expect(returned_resource["members"].map{ |res| res["value"] }).to match_array(group_member_uuids)
       end
     end
   end
@@ -368,16 +368,16 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         let(:modified_email) { Faker::Internet.email }
 
         let!(:replacement_users) { create_list(:user, replacement_list_length, company: company) }
-        let(:replacement_ids) { replacement_users.map{ |user| user[:id] }}
+        let(:replacement_uuids) { replacement_users.map{ |user| user[:uuid] }}
 
         it "returns scim+json content type" do
-          put :put_update, params: put_params(id: target_group.id), as: :json
+          put :put_update, params: put_params(id: target_group.uuid), as: :json
 
           expect(response.content_type).to eq("application/scim+json")
         end
 
         it "successfully updates a group" do
-          put :put_update, params: put_params(id: target_group.id, displayName: modified_name, email: modified_email), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, displayName: modified_name, email: modified_email), as: :json
 
           expect(response.status).to eq(200)
 
@@ -386,7 +386,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "reprovisions a group" do
-          put :put_update, params: put_params(id: target_group, active: true), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, active: true), as: :json
 
           expect(response.status).to eq(200)
 
@@ -394,7 +394,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "deprovisions a group" do
-          put :put_update, params: put_params(id: target_group, active: false), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, active: false), as: :json
 
           expect(response.status).to eq(200)
 
@@ -402,16 +402,16 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "replaces group's user list" do
-          put :put_update, params: put_params(id: target_group.id, members: [ { value: replacement_ids[0] }, { value: replacement_ids[1] } ]), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, members: [ { value: replacement_uuids[0] }, { value: replacement_uuids[1] } ]), as: :json
 
           expect(response.status).to eq(200)
 
           expect(updated_user_list.length).to eq(replacement_list_length)
-          expect(updated_user_list.map{ |user| user[:id] }).to match_array(replacement_ids)
+          expect(updated_user_list.map{ |user| user[:uuid] }).to match_array(replacement_uuids)
         end
 
         it "does not add duplicates to groups" do
-          put :put_update, params: put_params(id: target_group.id, members: [ { value: replacement_ids[0] }, { value: replacement_ids[1] }, { value: replacement_ids[1] } ]), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, members: [ { value: replacement_uuids[0] }, { value: replacement_uuids[1] }, { value: replacement_uuids[1] } ]), as: :json
 
           expect(response.status).to eq(200)
 
@@ -419,7 +419,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "clears a group's user list" do
-          put :put_update, params: put_params(id: target_group.id), as: :json
+          put :put_update, params: put_params(id: target_group.uuid), as: :json
 
           expect(response.status).to eq(200)
 
@@ -429,18 +429,17 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
       end
 
       context "without valid credentials" do
-        let(:invalid_group_id) { "invalid_group_id" }
         let(:invalid_user_id) { "invalid_user_id" }
 
         it "returns :not_found for id without a group" do
-          put :put_update, params: put_params(id: invalid_group_id), as: :json
+          put :put_update, params: put_params(id: "invalid_group_id"), as: :json
 
           expect(response.status).to eq(404)
         end
 
         it "returns 422 if attribute params missing" do
           put :put_update, params: {
-            id: target_group.id,
+            id: target_group.uuid,
             displayName: "Joe",
             members: []
           }, as: :json
@@ -451,7 +450,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "returns 400 if active param invalid" do
-          put :put_update, params: put_params(id: target_group.id, active: "hotdog"), as: :json
+          put :put_update, params: put_params(id: target_group.uuid, active: "hotdog"), as: :json
 
           expect(response.status).to eq(400)
 
@@ -463,7 +462,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
           it "returns :bad_request if missing" do
             put :put_update, params: {
-              id: target_group.id
+              id: target_group.uuid
             }, as: :json
 
             expect(response.status).to eq(400)
@@ -473,7 +472,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
           it "returns :bad_request if not an array" do
             put :put_update, params: {
-              id: target_group.id,
+              id: target_group.uuid,
               members: Faker::Games::Pokemon.name
             }, as: :json
 
@@ -484,7 +483,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
           it "returns :bad_request if not an array of hashes" do
             put :put_update, params: {
-              id: target_group.id,
+              id: target_group.uuid,
               members: [ Faker::Games::Pokemon.name, Faker::Games::Pokemon.location, Faker::Games::Pokemon.move ]
             }, as: :json
 
@@ -498,7 +497,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               id: target_group.id,
               members: [
                 {
-                  value: invalid_user_id
+                  value: "invalid_user_id"
                 }
               ]
             ), as: :json
@@ -543,18 +542,17 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
       context "with valid credentials" do
         let!(:new_user) { create(:user, company: company) }
-        let(:new_user_id) { new_user.id }
 
         let(:updated_group) { company.groups.first }
         let(:updated_user_list) { updated_group.users }
-        let(:updated_user_ids) { updated_user_list.map{ |user| user[:id] } }
+        let(:updated_user_uuids) { updated_user_list.map{ |user| user[:uuid] } }
 
         let(:new_display_name) { Faker::Name.first_name }
         let(:new_email) { Faker::Internet.email }
 
         it 'returns scim+json content type' do
           patch :patch_update, params: {
-            id: target_group.id,
+            id: target_group.uuid,
             Operations: []
           }, as: :json
 
@@ -564,10 +562,10 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         context "when using 'replace' operation" do
           let(:replacement_list_length) { 2 }
           let!(:replacement_users) { create_list(:user, replacement_list_length, company: company) }
-          let(:replacement_ids) { replacement_users.map{ |user| user[:id] } }
+          let(:replacement_uuids) { replacement_users.map{ |user| user[:uuid] } }
 
           it 'updates group attributes' do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, value: { displayName: new_display_name }), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, value: { displayName: new_display_name }), as: :json
   
             expect(response.status).to eq(200)
   
@@ -575,7 +573,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           end
   
           it 'reprovisions a group' do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, value: { active: true }), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, value: { active: true }), as: :json
   
             expect(response.status).to eq(200)
   
@@ -583,7 +581,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           end
   
           it 'deprovisions a group' do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, value: { active: false }), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, value: { active: false }), as: :json
   
             expect(response.status).to eq(200)
   
@@ -591,16 +589,16 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           end
 
           it "replaces a group's user list with another" do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, path: "members", value: [ { value: replacement_ids[0] }, { value: replacement_ids[1] } ]), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, path: "members", value: [ { value: replacement_uuids[0] }, { value: replacement_uuids[1] } ]), as: :json
 
             expect(response.status).to eq(200)
 
             expect(updated_user_list.length).to eq(replacement_list_length)
-            expect(updated_user_ids).to match_array(replacement_ids)
+            expect(updated_user_uuids).to match_array(replacement_uuids)
           end
 
           it "replaces a group's user list to be empty" do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, path: "members", value: []), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, path: "members", value: []), as: :json
 
             expect(response.status).to eq(200)
 
@@ -610,34 +608,35 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
         context "when using 'add' operation" do
           it 'adds user to group' do
-            patch :patch_update, params: patch_add_params(id: target_group.id, value: [ { value: new_user_id } ]), as: :json
+            patch :patch_update, params: patch_add_params(id: target_group.uuid, value: [ { value: new_user.uuid } ]), as: :json
 
             expect(response.status).to eq(200)
 
             expect(updated_user_list.length).to eq(user_list_length + 1)
-            expect(updated_user_ids).to include(new_user_id)
+            expect(updated_user_uuids).to include(new_user.uuid)
           end
 
           it 'will not add same user to group more than once' do
-            patch :patch_update, params: patch_add_params(id: target_group.id, value: [ { value: new_user_id }, { value: new_user_id } ]), as: :json
+            patch :patch_update, params: patch_add_params(id: target_group.uuid, value: [ { value: new_user.uuid }, { value: new_user.uuid } ]), as: :json
 
             expect(updated_user_list.length).to eq(user_list_length + 1)
           end
         end
 
         context "when using 'remove' operation" do
-          let(:target_user_id) { user_list.first.id }
+          let(:target_user_id) { user_list.last.uuid }
 
-          it 'removes target users from group' do
-            patch :patch_update, params: patch_remove_params(id: target_group.id, path: "members[value eq \"#{target_user_id}\"]"), as: :json
+          it 'removes target user from group' do
+            patch :patch_update, params: patch_remove_params(id: target_group.uuid, path: "members[value eq \"#{target_user_id}\"]"), as: :json
 
             expect(response.status).to eq(200)
             
+            expect(updated_user_list.map{ |user| user[:uuid] }).to_not include(target_user_id)
             expect(updated_user_list.length).to eq(user_list_length - 1)
           end
 
           it 'does not remove if values not found' do
-            patch :patch_update, params: patch_remove_params(id: target_group.id, path: "members[value eq \"unknown\"]"), as: :json
+            patch :patch_update, params: patch_remove_params(id: target_group.uuid, path: "members[value eq \"unknown\"]"), as: :json
 
             expect(response.status).to eq(200)
 
@@ -645,7 +644,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           end
 
           it 'removes all users if no member filter' do
-            patch :patch_update, params: patch_remove_params(id: target_group.id, path: "members"), as: :json
+            patch :patch_update, params: patch_remove_params(id: target_group.uuid, path: "members"), as: :json
 
             expect(response.status).to eq(200)
 
@@ -655,7 +654,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
 
         it "works with more than one operation" do
           patch :patch_update, params: {
-            id: target_group.id,
+            id: target_group.uuid,
             Operations: [
               {
                 op: "replace",
@@ -672,7 +671,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
                 op: "add",
                 value: [
                   {
-                    value: new_user_id
+                    value: new_user.uuid
                   }
                 ]
               }
@@ -685,16 +684,14 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           expect(updated_group.email).to eq(new_email)
 
           expect(updated_user_list.length).to eq(1)
-          expect(updated_user_ids).to include(new_user_id)
+          expect(updated_user_uuids).to include(new_user.uuid)
         end
       end
 
       context "without valid credentials" do
-        let(:invalid_id) { "invalid_id" }
-
         it "returns 404 if for id not belonging to group" do
           patch :patch_update, params: {
-            id: invalid_id,
+            id: "invalid_id",
             Operations: []
           }, as: :json
 
@@ -702,32 +699,32 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it 'returns 404 when adding nonexistent user' do
-          patch :patch_update, params: patch_add_params(id: target_group, value: [ { value: "N/A" } ]), as: :json
+          patch :patch_update, params: patch_add_params(id: target_group.uuid, value: [ { value: "N/A" } ]), as: :json
 
           expect(response.status).to eq(404)
         end
 
         it "returns 400 for invalid active param" do
-          patch :patch_update, params: patch_replace_params(id: target_group.id, value: { active: "hotdog" }), as: :json
+          patch :patch_update, params: patch_replace_params(id: target_group.uuid, value: { active: "hotdog" }), as: :json
 
           expect(response.status).to eq(400)
         end
 
         context "with unprocessable paths" do
           it "returns 422 for 'replace'" do
-            patch :patch_update, params: patch_replace_params(id: target_group.id, path: "unprocessable_path"), as: :json
+            patch :patch_update, params: patch_replace_params(id: target_group.uuid, path: "unprocessable_path"), as: :json
 
             expect(response.status).to eq(422)
           end
 
           it "returns 422 for 'remove'" do
-            patch :patch_update, params: patch_remove_params(id: target_group.id, path: "unprocessable_path"), as: :json
+            patch :patch_update, params: patch_remove_params(id: target_group.uuid, path: "unprocessable_path"), as: :json
 
             expect(response.status).to eq(422)
           end
 
           it "returns 422 for bad filter" do
-            patch :patch_update, params: patch_remove_params(id: target_group.id, path: "members[value eq]"), as: :json
+            patch :patch_update, params: patch_remove_params(id: target_group.uuid, path: "members[value eq]"), as: :json
 
             expect(response.status).to eq(422)
           end
@@ -761,34 +758,28 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           http_login(company)
         end
   
-        let(:group_id) { 1 }
-        let(:invalid_id) { "invalid_id" }
-        
         let!(:user_list) { create_list(:user, 3, company: company) }
-  
         let!(:group) { create(:group, users: user_list, company: company) }
   
         it "returns :not_found for invalid id" do
-          delete :delete, params: { id: invalid_id }
+          delete :delete, params: { id: "invalid_id" }
   
           expect(response.status).to eq(404)
         end
   
         context "with unauthorized group" do
-          let(:unauthorized_id) { 2 }
-  
           let!(:new_company) { create(:company) }
-          let!(:unauthorized_group) { create(:group, company: new_company, id: unauthorized_id) }
+          let!(:unauthorized_group) { create(:group, company: new_company) }
   
           it "returns :not_found for correct id but unauthorized company" do
-            delete :delete, params: { id: unauthorized_id }
+            delete :delete, params: { id: unauthorized_group.uuid }
   
             expect(response.status).to eq(404)
           end
         end
   
         it "successfully deletes for correct id provided" do
-          delete :delete, params: { id: group_id }
+          delete :delete, params: { id: group.uuid }
   
           expect(response.status).to eq(204)
           expect(Group.count).to eq(0)
