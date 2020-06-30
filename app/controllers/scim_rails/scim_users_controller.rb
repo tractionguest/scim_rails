@@ -82,13 +82,14 @@ module ScimRails
       user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
 
       params["Operations"].each do |operation|
-        raise ScimRails::ExceptionHandler::UnsupportedPatchRequest if operation["op"] != "replace"
+        raise ScimRails::ExceptionHandler::UnsupportedPatchRequest if operation["op"].downcase != "replace"
 
-        changed_attributes = permitted_params(operation["value"])
+        path_params = extract_path_params(operation)
+        changed_attributes = permitted_params(path_params || operation["value"])
 
         user.update!(changed_attributes.compact)
 
-        active_param = operation.dig("value", "active")
+        active_param = extract_active_param(operation, path_params)
         status = patch_status(active_param)
         
         next if status.nil?
@@ -119,7 +120,6 @@ module ScimRails
       ScimRails.config.mutable_user_attributes.each.with_object({}) do |attribute, hash|
         hash[attribute] = parameters.dig(*path_for(attribute))
       end.merge(ScimRails.config.custom_user_attributes)
-      
     end
 
     def update_status(user)
