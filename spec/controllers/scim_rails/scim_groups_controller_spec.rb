@@ -886,7 +886,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
   
         it "successfully deletes for correct id provided" do
-          delete :delete, params: { id: group_id }
+          delete :delete, params: { id: group.id }
   
           expect(response.status).to eq(204)
           expect(Group.count).to eq(0)
