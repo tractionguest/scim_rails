@@ -568,7 +568,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         let(:patch_value) { nil }
   
         it 'returns scim+json content type' do
-          expect(response.content_type).to eq("application/scim+json")
+          expect(response.media_type).to eq("application/scim+json")
         end
   
         context "when group id is invalid" do
