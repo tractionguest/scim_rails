@@ -550,76 +550,76 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
       before :each do
         http_login(company)
+        patch :patch_update, params: params
       end
 
-      it "returns scim+json content type" do
-        patch :patch_update, params: patch_params(id: 1)
-
-        expect(response.content_type).to eq "application/scim+json"
-      end
-
-      it "is successful with valid credentials" do
-        patch :patch_update, params: patch_params(id: 1)
-
-        expect(response.status).to eq 200
-      end
-
-      it "returns :not_found for id that cannot be found" do
-        get :patch_update, params: patch_params(id: "fake_id")
-
-        expect(response.status).to eq 404
-      end
-
-      it "returns :not_found for a correct id but unauthorized company" do
-        new_company = create(:company)
-        create(:user, company: new_company, id: 1000)
-
-        get :patch_update, params: patch_params(id: 1000)
-
-        expect(response.status).to eq 404
-      end
-
-      it "returns 422 error for an invalid op" do
-        patch :patch_update, params: {
-          id: 1,
-          Operations: [
-            {
-              op: "hamburger"
-            }
-          ]
+      let(:params) do
+        {
+          id: patch_id,
+          Operations: patch_operation_list,
         }
-
-        expect(response.status).to eq(422)
-
-        response_body = JSON.parse(response.body)
-        expect(response_body.dig("schemas", 0)).to eq "urn:ietf:params:scim:api:messages:2.0:Error"
-        expect(response_body["detail"]).to eq("Invalid PATCH request. This PATCH endpoint only 'replace' operations.")
       end
 
-      it "successfully archives user" do
-        expect(company.users.count).to eq 1
-        user = company.users.first
-        expect(user.archived?).to eq false
+      let(:patch_id) { user.id }
+      let(:patch_operation_list) { [{ op: "replace", value: { active: true } }] }
 
-        patch :patch_update, params: patch_params(id: 1)
+      context "with valid id" do
+        it "returns scim+json content type" do
+          expect(response.content_type).to eq("application/scim+json")
+        end
 
-        expect(response.status).to eq 200
-        expect(company.users.count).to eq 1
-        user.reload
-        expect(user.archived?).to eq true
+        it "is successful" do
+          expect(response.status).to eq(200)
+        end
       end
 
-      it "successfully restores user" do
-        expect(company.users.count).to eq 1
-        user = company.users.first.tap(&:archive!)
-        expect(user.archived?).to eq true
+      context "with invalid id" do
+        let(:patch_id) { "invalid_id" }
 
-        patch :patch_update, params: patch_params(id: 1,  active: true)
+        it "returns 404 not found" do
+          expect(response.status).to eq(404)
+        end
 
-        expect(response.status).to eq 200
-        expect(company.users.count).to eq 1
-        user.reload
-        expect(user.archived?).to eq false
+        context "when belonging to unauthorized company" do
+          let!(:unauthorized_company) { create(:company) }
+          let!(:unauthorized_user) { create(:user, company: unauthorized_company) }
+
+          let(:patch_id) { unauthorized_user.id }
+
+          it "returns 404 not found" do
+            expect(response.status).to eq(404)
+          end
+        end
+      end
+
+      context "with invalid operation" do
+        let(:patch_operation_list) { [{ op: "hamburger" }] }
+
+        it "returns 422" do
+          expect(response.status).to eq(422)
+        end
+      end
+
+      context "with active param" do
+        let(:patch_operation_list) { [{ op: "replace", value: { active: patch_active } }] }
+
+        context "when true" do
+          let(:patch_active) { true }
+
+          it "reactivates user" do
+            expect(response.status).to eq(200)
+            expect(company_user.archived?).to eq(false)
+          end
+        end
+
+        context "when false" do
+          let(:patch_active) { false }
+
+          it "deactivates user" do
+            expect(response.status).to eq(200)
+            expect(company_user.archived?).to eq(true)
+          end
+        end
       end
 
       context 'when changing non-status attributes' do
@@ -866,20 +866,6 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         expect(User.count).to eq(0)
       end
     end
-  end
-
-  def patch_params(id:, active: false)
-    {
-      id: id,
-      Operations: [
-        {
-          op: "replace",
-          value: {
-            active: active
-          }
-        }
-      ]
-    }
   end
 
   def put_params(active: true)
