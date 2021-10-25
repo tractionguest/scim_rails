@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/lessonly/scim_rails.svg?branch=master)](https://travis-ci.com/lessonly/scim_rails)
+[![Inline docs](http://inch-ci.org/github/lessonly/scim_rails.svg?branch=master)](http://inch-ci.org/github/lessonly/scim_rails)
+[![Maintainability](https://api.codeclimate.com/v1/badges/ddfb6a891d2f0d1122ae/maintainability)](https://codeclimate.com/github/lessonly/scim_rails/maintainability)
+
 # ScimRails
 
 NOTE: This Gem is not yet fully SCIM complaint. It was developed with the main function of interfacing with Okta. There are features of SCIM that this Gem does not implement as described in the SCIM documentation or that have been left out completely.
@@ -244,6 +248,20 @@ Sample request:
 
 ```bash
 $ curl -X PATCH 'http://username:password@localhost:3000/scim/v2/Users/1' -d '{"schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"], "Operations": [{"op": "replace", "value": { "active": false }}]}' -H 'Content-Type: application/scim+json'
+```
+
+### Error Handling
+
+By default, scim_rails will output any unhandled exceptions to your configured rails logs.
+
+If you would like, you can supply a custom handler for exceptions in the initializer. The only requirement is that the value you supply responds to `#call`.
+
+For example, you might want to notify Honeybadger:
+
+```ruby
+ScimRails.configure do |config|
+  config.on_error = ->(e) { Honeybadger.notify(e) }
+end
 ```
 
 ## Contributing

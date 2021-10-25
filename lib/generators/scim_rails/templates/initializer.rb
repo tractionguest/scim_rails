@@ -14,15 +14,13 @@ ScimRails.configure do |config|
   # Model used for user records.
   config.scim_users_model = "User"
 
-  # Model used for group records
-  config.scim_groups_model = "Group"
-
-  # Metod used for retriving user records from the
+  # Method used for retrieving user records from the
   # authenticatable model.
   config.scim_users_scope = :users
 
   # Model used for the members of a group
   config.scim_group_member_scope = :users
+  config.scim_groups_model = "Group"
 
   # Determine whether the create endpoint updates users that already exist
   # or throws an error (returning 409 Conflict in accordance with SCIM spec)

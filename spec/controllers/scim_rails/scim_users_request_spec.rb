@@ -8,22 +8,22 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
   def post_request(content_type = "application/scim+json")
     # params need to be transformed into a string to test if they are being parsed by Rack
 
-    post "/scim_rails/scim/v2/Users",
-      params: {
-        name: {
-          givenName: "New",
-          familyName: "User",
-        },
-        emails: [
-          {
-            value: "new@example.com",
-          },
-        ],
-      }, as: :json,
-      headers: {
-        'Authorization': authorization,
-        'Content-Type': content_type,
-      }
+    post "/scim/v2/Users",
+         params: {
+           name: {
+             givenName: "New",
+             familyName: "User",
+           },
+           emails: [
+             {
+               value: "new@example.com",
+             },
+           ],
+         }.to_json,
+         headers: {
+           'Authorization': authorization,
+           'Content-Type': content_type,
+         }
   end
 
   describe "Content-Type" do
