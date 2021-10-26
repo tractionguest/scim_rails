@@ -20,7 +20,13 @@ RSpec.configure do |config|
  config.mock_with :rspec
  # config.use_transactional_fixtures = true
  config.infer_base_class_for_anonymous_controllers = false
- config.order = "random"
+ # config.order = "random"
  config.filter_run :focus
  config.run_all_when_everything_filtered = true
+
+ # AAB-TODO
+ config.before(:each) do
+   User.unscoped.destroy_all
+   Company.unscoped.destroy_all
+ end
 end

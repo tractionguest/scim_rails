@@ -12,7 +12,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         get :index
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
@@ -38,7 +38,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         get :index
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "is successful with valid credentials" do
@@ -147,7 +147,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         get :show, params: { id: 1 }
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
@@ -173,7 +173,9 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         get :show, params: { id: 1 }
 
-        expect(response.content_type).to eq "application/scim+json"
+        "application\/scim+json"
+        "application\/scim+json; charset=utf-8"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "is successful with valid credentials" do
@@ -208,7 +210,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         post :create
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
@@ -246,7 +248,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
           ]
         }
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "is successful with valid credentials" do
@@ -839,7 +841,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
   describe "delete" do
     let(:company) { create(:company) }
-  
+
     context "when unauthorized" do
       before { delete :delete, params: { id: 1 } }
 
@@ -881,7 +883,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         it "returns :not_found for correct id but unauthorized company" do
           delete :delete, params: { id: unauthorized_id }
-          
+
           expect(response.status).to eq(404)
         end
       end

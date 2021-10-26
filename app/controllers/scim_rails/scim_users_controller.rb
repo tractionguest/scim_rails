@@ -9,7 +9,7 @@ module ScimRails
         users = @company
           .public_send(ScimRails.config.scim_users_scope)
           .where(
-            "#{ScimRails.config.scim_users_model.connection.quote_column_name(query.attribute)} #{query.operator} ?",
+            "#{ScimRails.config.scim_users_model.connection.quote_column_name(query.user_attribute)} #{query.operator} ?",
             query.parameter
           )
           .order(ScimRails.config.scim_users_list_order)
@@ -40,11 +40,11 @@ module ScimRails
       else
         username_key = ScimRails.config.queryable_user_attributes[:userName]
         find_by_username = Hash.new
-        find_by_username[username_key] = permitted_user_params[username_key]
+        find_by_username[username_key] = user_params[username_key]
         user = @company
           .public_send(ScimRails.config.scim_users_scope)
           .find_or_create_by(find_by_username)
-        user.update!(permitted_user_params)
+        user.update!(user_params)
       end
       update_status(user) unless params[:active].nil?
 
