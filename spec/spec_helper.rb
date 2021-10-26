@@ -1,11 +1,11 @@
 ENV['RAILS_ENV'] = 'test'
 
 require File.expand_path("../dummy/config/environment.rb", __FILE__)
-require 'rspec/rails'
-require 'factory_bot_rails'
-require 'byebug'
 require 'awesome_print'
+require 'byebug'
+require 'factory_bot_rails'
 require 'faker'
+require 'rspec/rails'
 require 'simplecov'
 require 'simplecov_json_formatter'
 
@@ -25,8 +25,13 @@ RSpec.configure do |config|
  config.run_all_when_everything_filtered = true
 
  # AAB-TODO
+ # Poor mans DB reset w/o a gem or using use_transactional_fixtures
  config.before(:each) do
-   User.unscoped.destroy_all
-   Company.unscoped.destroy_all
+   cleaner = -> (model) do
+     model.connection.execute("DELETE FROM #{model.table_name}")
+     model.connection.execute("DELETE FROM sqlite_sequence where name = '#{model.table_name}'")
+   end
+   cleaner.call(User)
+   cleaner.call(Company)
  end
 end
