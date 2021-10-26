@@ -66,9 +66,12 @@ module ScimRails
     def put_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
+      # AAB-TODO: Using `user_params` rather than `permitted_user_params` is also what fixed #create; extract it?
+      user_params = permitted_params(params, "User").merge(multi_attr_type_to_value(params))
+
       user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
       update_status(user) unless put_active_param.nil?
-      user.update!(permitted_user_params)
+      user.update!(user_params)
 
       ScimRails.config.after_scim_response.call(user, "UPDATED") unless ScimRails.config.after_scim_response.nil?
 
