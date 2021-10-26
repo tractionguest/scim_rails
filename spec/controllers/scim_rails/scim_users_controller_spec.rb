@@ -425,7 +425,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         put :put_update, params: { id: 1 }
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
@@ -453,7 +453,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         put :put_update, params: put_params
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "is successful with with valid credentials" do
@@ -463,7 +463,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       end
 
       it "deprovisions an active record" do
-        request.format = "application/scim+json"
+        request.format = "application/scim+json; charset=utf-8"
         put :put_update, params: put_params(active: false)
 
         expect(response.status).to eq 200
@@ -473,7 +473,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "reprovisions an inactive record" do
         user.archive!
         expect(user.reload.active?).to eq false
-        request.format = "application/scim+json"
+        request.format = "application/scim+json; charset=utf-8"
         put :put_update, params: put_params(active: true)
 
         expect(response.status).to eq 200
@@ -546,7 +546,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         patch :patch_update, params: patch_params(id: 1)
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
@@ -575,7 +575,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "returns scim+json content type" do
         patch :patch_update, params: patch_params(id: 1)
 
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "is successful with valid credentials" do
@@ -846,7 +846,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       before { delete :delete, params: { id: 1 } }
 
       it "returns scim+json content type" do
-        expect(response.content_type).to eq "application/scim+json"
+        expect(response.content_type).to eq "application/scim+json; charset=utf-8"
       end
 
       it "fails with no credentials" do
