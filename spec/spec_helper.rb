@@ -33,5 +33,6 @@ RSpec.configure do |config|
    end
    cleaner.call(User)
    cleaner.call(Company)
+   cleaner.call(Group)
  end
 end
