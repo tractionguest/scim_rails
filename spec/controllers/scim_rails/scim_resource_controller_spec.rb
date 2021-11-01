@@ -15,7 +15,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
       it "returns scim+json content type" do
         get :resource_user
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "fails with no credentials" do
@@ -43,7 +43,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
       it "returns scim+json content type" do
         get :resource_user
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "is successful with valid credentials" do
@@ -70,7 +70,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
         end
 
         it "successfully calls before_scim_response" do
-          expect{ get :resource_user }.to change{ counter.before_called }.from(0).to(1)  
+          expect{ get :resource_user }.to change{ counter.before_called }.from(0).to(1)
         end
       end
 
@@ -86,7 +86,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
         end
 
         it "successfully calls after_scim_response" do
-          expect{ get :resource_user }.to change{ counter.after_called }.from(0).to(1) 
+          expect{ get :resource_user }.to change{ counter.after_called }.from(0).to(1)
         end
       end
     end
@@ -99,7 +99,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
       it "returns scim+json content type" do
         get :resource_group
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "fails with no credentials" do
@@ -127,7 +127,7 @@ RSpec.describe ScimRails::ScimResourceController, type: :controller do
       it "returns scim+json content type" do
         get :resource_group
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "is successful with valid credentials" do
