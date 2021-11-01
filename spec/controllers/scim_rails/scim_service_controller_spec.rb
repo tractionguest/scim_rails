@@ -13,7 +13,7 @@ RSpec.describe ScimRails::ScimServiceController, type: :controller do
       it "returns scim+json content type" do
         get :configuration
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "fails with no credentials" do
@@ -43,7 +43,7 @@ RSpec.describe ScimRails::ScimServiceController, type: :controller do
       it "returns scim+json content type" do
         get :configuration
 
-        expect(response.content_type).to eq("application/scim+json")
+        expect(response.content_type).to eq("application/scim+json; charset=utf-8")
       end
 
       it "is successful with valid credentials" do
