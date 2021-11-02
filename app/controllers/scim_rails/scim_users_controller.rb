@@ -33,18 +33,16 @@ module ScimRails
     def create
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user_params = permitted_params(params, "User").merge(multi_attr_type_to_value(params))
-
       if ScimRails.config.scim_user_prevent_update_on_create
         user = @company.public_send(ScimRails.config.scim_users_scope).create!(permitted_user_params)
       else
         username_key = ScimRails.config.queryable_user_attributes[:userName]
         find_by_username = Hash.new
-        find_by_username[username_key] = user_params[username_key]
+        find_by_username[username_key] = permitted_user_params[username_key]
         user = @company
           .public_send(ScimRails.config.scim_users_scope)
           .find_or_create_by(find_by_username)
-        user.update!(user_params)
+        user.update!(permitted_user_params)
       end
       update_status(user) unless params[:active].nil?
 
@@ -66,12 +64,9 @@ module ScimRails
     def put_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      # AAB-TODO: Using `user_params` rather than `permitted_user_params` is also what fixed #create; extract it?
-      user_params = permitted_params(params, "User").merge(multi_attr_type_to_value(params))
-
       user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
       update_status(user) unless put_active_param.nil?
-      user.update!(user_params)
+      user.update!(permitted_user_params)
 
       ScimRails.config.after_scim_response.call(user, "UPDATED") unless ScimRails.config.after_scim_response.nil?
 
@@ -127,9 +122,7 @@ module ScimRails
     end
 
     def permitted_user_params
-      ScimRails.config.mutable_user_attributes.each.with_object({}) do |attribute, hash|
-        hash[attribute] = find_value_for(attribute)
-      end
+      permitted_params(params, "User").merge(multi_attr_type_to_value(params))
     end
 
     def find_value_for(attribute)
