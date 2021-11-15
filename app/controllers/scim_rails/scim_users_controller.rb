@@ -1,5 +1,7 @@
 module ScimRails
   class ScimUsersController < ScimRails::ApplicationController
+    before_action :check_allowed_parameters!, only: %i[create patch_update put_update delete]
+
     def index
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
@@ -119,6 +121,26 @@ module ScimRails
 
     def get_multi_value_attrs(operation)
       schema_hash = contains_square_brackets?(operation["path"]) ? multi_attr_type_to_value(process_filter_path(operation)) : {}
+    end
+
+    def check_allowed_parameters!
+      schema = ScimRails.config.user_schema.dup
+      if schema.fetch(:schemas, []).include?("urn:ietf:params:scim:schemas:core:2.0:User")
+        schema.delete(:schemas)
+        schema.merge!(ParameterService::SCIM_CORE_USER_SCHEMA)
+      end
+
+      bad_fields = ParameterService.invalid_parameters(schema, params)
+      return if bad_fields.empty?
+
+      json_response(
+        {
+          schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+          detail: "Unknown fields: #{bad_fields.join(", ")}",
+          status: "422"
+        },
+        :unprocessable_entity,
+      )
     end
 
     def permitted_user_params

@@ -35,4 +35,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "pry-rescue"
   s.add_development_dependency "simplecov", "< 0.18.0"
   s.add_development_dependency "simplecov_json_formatter"
+  s.add_development_dependency "rubocop"
+  s.add_development_dependency "rubocop-rails"
+  s.add_development_dependency "rubocop-rspec"
 end
