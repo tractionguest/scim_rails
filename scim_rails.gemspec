@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.required_ruby_version = "~> 2.4"
-  s.add_dependency "rack", "~> 2.2.3"
+  s.add_dependency "rack", ">= 2.2.3", "< 3.1.0"
   s.add_dependency "rails", ">= 5.0", "< 6.1"
   s.add_dependency "nokogiri", "~> 1.13.6"
   s.add_runtime_dependency "jwt", ">= 1.5", "< 3.0"
