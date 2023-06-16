@@ -1,13 +1,13 @@
 jobs:
   build:
     docker:
-      - image: cimg/ruby:2.7.7
+      - image: cimg/ruby:3.2.2
     steps:
       - checkout
       - run: ruby --version
       - run:
           name: Install bundler
-          command: gem install bundler --version '~> 2.4.12'
+          command: gem install bundler --version '~> 2.4.14'
       - run:
           name: Setup dummy app
           command: cd spec/dummy && bin/setup

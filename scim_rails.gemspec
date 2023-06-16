@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   s.require_paths = ["lib"]
 
-  s.required_ruby_version = "~> 2.7"
+  s.required_ruby_version = "~> 3.2"
   s.add_dependency "rack", "~> 2.2.3"
   s.add_dependency "rails", "~> 6.1.7", ">= 6.1.7.3"
   s.add_dependency "nokogiri"
@@ -32,8 +32,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "faker"
   s.add_development_dependency "byebug"
   s.add_development_dependency "awesome_print"
-  s.add_development_dependency "sqlite3", "~> 1.3", "< 1.5"
-  s.add_development_dependency "simplecov", "< 0.18.0"
+  s.add_development_dependency "sqlite3", "~> 1.6"
+  s.add_development_dependency "simplecov"
   s.add_development_dependency "simplecov_json_formatter"
   s.add_development_dependency "rubocop"
   s.add_development_dependency "rubocop-rails"
