@@ -15,4 +15,4 @@ inherit_from:
 require:
 - rubocop-rails
 - rubocop-rspec
-
+- rubocop-factory_bot
