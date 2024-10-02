@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = ">= 2.7", "<= 3.2.2"
 
   s.add_dependency "rack", ">= 2.2.3", "< 4.0"
-  s.add_dependency "rails", "~> 7.0"
+  s.add_dependency "rails", ">= 6.1.7.3", "< 8.0"
   s.add_dependency "nokogiri", "~> 1.13"
 
   s.add_runtime_dependency "jwt", ">= 1.5", "< 3.0"
