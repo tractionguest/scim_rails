@@ -5,11 +5,13 @@ module ScimRails
     def index
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
+      users_scope = ScimRails.config.scim_users_list_scope || ScimRails.config.scim_users_scope
+
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
 
         users = @company
-          .public_send(ScimRails.config.scim_users_scope)
+          .public_send(users_scope)
           .where(
             "#{ScimRails.config.scim_users_model.connection.quote_column_name(query.user_attribute)} #{query.operator} ?",
             query.parameter
@@ -17,7 +19,7 @@ module ScimRails
           .order(ScimRails.config.scim_users_list_order)
       else
         users = @company
-          .public_send(ScimRails.config.scim_users_scope)
+          .public_send(users_scope)
           .order(ScimRails.config.scim_users_list_order)
       end
 

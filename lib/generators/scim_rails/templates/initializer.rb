@@ -21,6 +21,13 @@ ScimRails.configure do |config|
   # authenticatable model.
   config.scim_users_scope = :users
 
+  # Optional method to retrive users when using a GET request.
+  # This is so the ScimUsersController index method to use a different scope than the rest of its methods,
+  # allowing it to filter soft-deleted users only for GET requests. With that, a soft-deleted user could
+  # still be reinstated using CREATE or PATCH requests.
+  # FIXME: WIP
+  config.scim_users_list_scope = :users
+
   # Model used for the members of a group
   config.scim_group_member_scope = :users
 
