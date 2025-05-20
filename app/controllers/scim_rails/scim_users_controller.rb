@@ -6,6 +6,7 @@ module ScimRails
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
       users_scope = ScimRails.config.scim_users_list_scope || ScimRails.config.scim_users_scope
+      Rails.logger.debug { "[scim_rails] [ScimUsersController#index] users_scope: #{users_scope}" }
 
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
