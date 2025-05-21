@@ -5,8 +5,7 @@ module ScimRails
     def index
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      users_scope = ScimRails.config.scim_users_list_scope || ScimRails.config.scim_users_scope
-      Rails.logger.debug { "[scim_rails] [ScimUsersController#index] users_scope: #{users_scope}" }
+      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
 
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
@@ -63,9 +62,11 @@ module ScimRails
     end
 
     def show
+      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
+
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(users_scope).find(params[:id])
 
       ScimRails.config.after_scim_response.call(user, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
 
