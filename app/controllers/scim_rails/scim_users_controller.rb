@@ -74,9 +74,11 @@ module ScimRails
     end
 
     def put_update
+      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
+
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(users_scope).find(params[:id])
 
       user_params = permitted_params(params, "User").merge(multi_attr_type_to_value(params))
       user.update!(user_params)
@@ -89,9 +91,11 @@ module ScimRails
     end
 
     def patch_update
+      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
+
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(users_scope).find(params[:id])
 
       params["Operations"].each do |operation|
         raise ScimRails::ExceptionHandler::UnsupportedPatchRequest unless ["replace", "add", "remove"].include?(operation["op"].downcase)
