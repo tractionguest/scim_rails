@@ -5,8 +5,6 @@ module ScimRails
     def index
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
-
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
 
@@ -40,7 +38,7 @@ module ScimRails
       user_params = permitted_params(params, "User").merge(multi_attr_type_to_value(params))
 
       if ScimRails.config.scim_user_prevent_update_on_create
-        user = @company.public_send(ScimRails.config.scim_users_scope).create!(user_params)
+        user = @company.public_send(users_scope).create!(user_params)
       else
         username_key = ScimRails.config.queryable_user_attributes[:userName]
         email_key = ScimRails.config.queryable_user_attributes[:email]
@@ -62,8 +60,6 @@ module ScimRails
     end
 
     def show
-      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
-
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
       user = @company.public_send(users_scope).find(params[:id])
@@ -74,8 +70,6 @@ module ScimRails
     end
 
     def put_update
-      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
-
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
       user = @company.public_send(users_scope).find(params[:id])
@@ -91,8 +85,6 @@ module ScimRails
     end
 
     def patch_update
-      users_scope = ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
-
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
       user = @company.public_send(users_scope).find(params[:id])
@@ -124,7 +116,7 @@ module ScimRails
     def delete
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      user = @company.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user = @company.public_send(users_scope).find(params[:id])
       user.update!(ScimRails.config.custom_user_attributes)
 
       user.destroy
@@ -135,6 +127,10 @@ module ScimRails
     end
 
     private
+
+    def users_scope
+      ScimRails.config.scim_users_visible_scope || ScimRails.config.scim_users_scope
+    end
 
     def get_multi_value_attrs(operation)
       schema_hash = contains_square_brackets?(operation["path"]) ? multi_attr_type_to_value(process_filter_path(operation)) : {}
