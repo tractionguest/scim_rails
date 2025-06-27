@@ -50,6 +50,9 @@ ScimRails.configure do |config|
   # For example, [:created_at, :id] or { created_at: :desc }.
   # config.scim_users_list_order = :id
 
+  # Method called models to provision (create) them.
+  config.scim_provision_method = :create!
+
   # Method called on user model to deprovision a user.
   config.user_deprovision_method = :archive!
 

@@ -33,12 +33,9 @@ module ScimRails
       if ScimRails.config.scim_group_prevent_update_on_create
         group = @company.public_send(ScimRails.config.scim_groups_scope).create!(group_attributes)
       else
-        display_name_key = ScimRails.config.queryable_group_attributes[:displayName]
-        find_by_display_name = {}
-        find_by_display_name[display_name_key] = group_attributes[display_name_key]
         group = @company
           .public_send(ScimRails.config.scim_groups_scope)
-          .find_or_create_by(find_by_display_name)
+          .public_send(ScimRails.config.scim_provision_method, group_attributes)
         group.update!(group_attributes)
       end
 
@@ -157,7 +154,7 @@ module ScimRails
 
     def put_error_check
       member_error_check(params["members"])
-        
+
       return if params[:active].nil?
 
       raise ScimRails::ExceptionHandler::InvalidActiveParam unless [true, "true", 1, false, "false", 0].include?(params[:active])
@@ -230,7 +227,7 @@ module ScimRails
 
         remove_members(group, member_ids)
         return
-        
+
       elsif path_string == "members"
         group.public_send(ScimRails.config.scim_group_member_scope).destroy_all
         return
