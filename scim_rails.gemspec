@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   s.require_paths = ["lib"]
 
-  s.required_ruby_version = ">= 2.7", "<= 3.2.2"
+  s.required_ruby_version = ">= 2.7", "< 3.3"
 
   s.add_dependency "rack", ">= 2.2.3", "< 4.0"
   s.add_dependency "rails", ">= 6.1.7.3", "< 8.0"
