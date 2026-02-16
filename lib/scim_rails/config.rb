@@ -52,7 +52,7 @@ module ScimRails
       :resource_user_schema,
       :resource_group_schema,
       :retrievable_user_schema,
-      :retrievable_group_schema,
+      :retrievable_group_schema
 
     def initialize
       @basic_auth_model = "Company"
