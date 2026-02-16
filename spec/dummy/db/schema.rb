@@ -10,14 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_08_19_053930) do
-
+ActiveRecord::Schema[7.2].define(version: 2021_08_19_053930) do
   create_table "companies", force: :cascade do |t|
     t.string "name", null: false
     t.string "subdomain", null: false
     t.string "api_token", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "groups", force: :cascade do |t|
@@ -25,16 +24,16 @@ ActiveRecord::Schema.define(version: 2021_08_19_053930) do
     t.string "email", null: false
     t.boolean "random_attribute", default: false
     t.integer "company_id"
-    t.datetime "archived_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "archived_at", precision: nil
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "groups_users", force: :cascade do |t|
     t.integer "user_id"
     t.integer "group_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["group_id"], name: "index_groups_users_on_group_id"
     t.index ["user_id"], name: "index_groups_users_on_user_id"
   end
@@ -47,9 +46,9 @@ ActiveRecord::Schema.define(version: 2021_08_19_053930) do
     t.boolean "random_attribute", default: false
     t.string "test_attribute"
     t.integer "company_id"
-    t.datetime "archived_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "archived_at", precision: nil
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.boolean "scoped_attribute", default: true
     t.string "department"
   end
