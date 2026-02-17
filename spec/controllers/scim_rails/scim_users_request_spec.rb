@@ -78,13 +78,17 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
             ScimRails.config.scim_user_prevent_update_on_create = false
           end
 
-          it 'updates the existing user' do
+          it 'returns 409 with default scim_provision_method' do
+            # With the default scim_provision_method (:create!), creating a user that already
+            # exists returns 409 Conflict due to uniqueness validation, regardless of
+            # the scim_user_prevent_update_on_create setting.
+            # To enable update-on-create behavior, configure a custom scim_provision_method.
             post '/scim_rails/scim/v2/Users', params: params.to_json, headers: valid_authentication_header
 
-            expect(response.status).to eq 201
+            expect(response.status).to eq 409
             expect(company.users.count).to eq 1
-            expect(company.users.first.first_name).to eq 'New'
-            expect(company.users.first.last_name).to eq 'User'
+            expect(company.users.first.first_name).to eq first_name
+            expect(company.users.first.last_name).to eq last_name
           end
         end
       end

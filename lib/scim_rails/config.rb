@@ -34,6 +34,7 @@ module ScimRails
       :signing_secret,
       :signing_algorithm,
       :user_attributes,
+      :scim_provision_method,
       :user_deprovision_method,
       :user_reprovision_method,
       :group_deprovision_method,
@@ -65,6 +66,7 @@ module ScimRails
       @group_attributes = []
       @custom_user_attributes = {}
       @custom_group_attributes = {}
+      @scim_provision_method = :create!
     end
 
     def mutable_user_attributes_schema
