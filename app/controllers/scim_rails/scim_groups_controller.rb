@@ -208,13 +208,15 @@ module ScimRails
     end
 
     def patch_add(group, operation)
-      raise ScimRails::ExceptionHandler::BadPatchPath unless ["members", nil].include?(operation["path"])
+      if ["members", nil].include?(operation["path"])
+        member_error_check(operation["value"])
 
-      member_error_check(operation["value"])
+        member_ids = operation["value"].map{ |member| member["value"] }
 
-      member_ids = operation["value"].map{ |member| member["value"] }
-
-      add_members(group, member_ids)
+        add_members(group, member_ids)
+      else
+        patch_replace_attributes(group, operation)
+      end
     end
 
     def patch_remove(group, operation)
