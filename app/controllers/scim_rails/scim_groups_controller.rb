@@ -6,12 +6,11 @@ module ScimRails
       if params[:filter].present?
         query = ScimRails::ScimQueryParser.new(params[:filter])
 
-        groups = @company.public_send(ScimRails.config.scim_groups_scope)
-                         .where("lower(#{ScimRails.config.scim_groups_model.connection.quote_column_name(query.group_attribute).gsub("\"", "")}) = ?", query.parameter.downcase)
-                         .order(ScimRails.config.scim_groups_list_order)
+        groups = groups_scope
+                   .where("lower(#{ScimRails.config.scim_groups_model.connection.quote_column_name(query.group_attribute).gsub("\"", "")}) = ?", query.parameter.downcase)
+                   .order(ScimRails.config.scim_groups_list_order)
       else
-        groups = @company.public_send(ScimRails.config.scim_groups_scope)
-                         .order(ScimRails.config.scim_groups_list_order)
+        groups = groups_scope.order(ScimRails.config.scim_groups_list_order)
       end
 
       counts = ScimCount.new(
@@ -48,18 +47,15 @@ module ScimRails
 
     def show
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
-
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
-
+      group = groups_scope.find(params[:id])
       ScimRails.config.after_scim_response.call(group, "RETRIEVED") unless ScimRails.config.after_scim_response.nil?
-
       json_scim_group_response(object: group)
     end
 
     def put_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = groups_scope.find(params[:id])
 
       put_error_check
 
@@ -81,7 +77,7 @@ module ScimRails
     def patch_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = groups_scope.find(params[:id])
 
       group.update!(ScimRails.config.custom_group_attributes)
 
@@ -270,6 +266,12 @@ module ScimRails
 
     def array_of_hashes?(array)
       array.all? { |hash| hash.is_a?(ActionController::Parameters) }
+    end
+
+    def groups_scope
+      @company
+        .public_send(ScimRails.config.scim_groups_scope)
+        .includes(ScimRails.config.scim_group_member_scope)
     end
   end
 end
