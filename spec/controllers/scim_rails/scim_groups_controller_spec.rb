@@ -718,10 +718,15 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
             end
 
             context "when path not set to 'members'" do
-              let(:patch_path) { "cheeseburger" }
+              let(:patch_path) { "externalId" }
+              let(:patch_value) { "10aa0369-2539-405f-b4f5-32be6ab6f88a" }
 
-              it "returns 400 bad_request" do
-                expect(response.status).to eq(400)
+              it "returns 200 and treats as attribute update" do
+                expect(response.status).to eq(200)
+              end
+
+              it "does not change group members" do
+                expect(updated_user_list.length).to eq(user_list_length)
               end
             end
           end
