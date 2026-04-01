@@ -30,11 +30,9 @@ module ScimRails
       group_attributes = permitted_params(params, "Group").except(:members)
 
       if ScimRails.config.scim_group_prevent_update_on_create
-        group = @company.public_send(ScimRails.config.scim_groups_scope).create!(group_attributes)
+        group = groups_scope.create!(group_attributes)
       else
-        group = @company
-          .public_send(ScimRails.config.scim_groups_scope)
-          .public_send(ScimRails.config.scim_provision_method, group_attributes)
+        group = groups_scope.public_send(ScimRails.config.scim_provision_method, group_attributes)
         group.update!(group_attributes)
       end
 
@@ -78,8 +76,7 @@ module ScimRails
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
       group = groups_scope.find(params[:id])
-
-      group.update!(ScimRails.config.custom_group_attributes)
+      group.update!(ScimRails.config.custom_group_attributes) if group_attributes_changed?(group)
 
       if params.key?("members")
         one_login_member_patch(group, params["members"])
@@ -95,7 +92,7 @@ module ScimRails
     def delete
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = @company.public_send(ScimRails.config.scim_groups_scope).find(params[:id])
+      group = groups_scope.find(params[:id])
       group.update!(ScimRails.config.custom_group_attributes)
 
       group.destroy
@@ -140,12 +137,14 @@ module ScimRails
       end
     end
 
+    # Raise an error if an ID is not found in the DB.
     def member_error_check(members)
       raise ScimRails::ExceptionHandler::InvalidMembers unless (members.is_a?(Array) && array_of_hashes?(members))
 
-      member_ids = members.map{ |member| member["value"] }
-
-      @company.public_send(ScimRails.config.scim_users_scope).find(member_ids)
+      member_ids = members.map { _1['value'] }.uniq
+      unless all_users_scope.where(id: member_ids).count == member_ids.size
+        raise ActiveRecord::RecordNotFound
+      end
     end
 
     def put_error_check
@@ -157,18 +156,20 @@ module ScimRails
     end
 
     def add_members(group, member_ids)
+      members = group.public_send(ScimRails.config.scim_group_member_scope)
       member_ids = member_ids.map{ |id| id.to_i }
 
-      new_member_ids = member_ids - group.public_send(ScimRails.config.scim_group_member_scope).pluck(:id)
-      new_members = @company.public_send(ScimRails.config.scim_users_scope).find(new_member_ids)
+      new_member_ids = member_ids - members.map(&:id)
+      new_members = all_users_scope.find(new_member_ids)
 
-      group.public_send(ScimRails.config.scim_group_member_scope) << new_members if new_members.present?
+      members << new_members if new_members.present?
     end
 
     def remove_members(group, member_ids)
-      target_members = group.public_send(ScimRails.config.scim_group_member_scope).find(member_ids)
+      members = group.public_send(ScimRails.config.scim_group_member_scope)
+      target_members = members.find(member_ids)
 
-      group.public_send(ScimRails.config.scim_group_member_scope).destroy(target_members)
+      members.destroy(target_members)
     end
 
     def patch_replace(group, operation)
@@ -271,9 +272,23 @@ module ScimRails
     end
 
     def groups_scope
-      @company
-        .public_send(ScimRails.config.scim_groups_scope)
-        .includes(ScimRails.config.scim_group_member_scope)
+      @groups_scope ||=
+        @company
+          .public_send(ScimRails.config.scim_groups_scope)
+          .includes(ScimRails.config.scim_group_member_scope)
+    end
+
+    def all_users_scope
+      @all_users_scope ||= @company.public_send(ScimRails.config.scim_users_scope)
+    end
+
+    # Have any attributes changed, ignoring attr_accessor attributes?
+    def group_attributes_changed?(group)
+      column_names = group.class.column_names
+
+      ScimRails.config.custom_group_attributes.any? do |attr, value|
+        column_names.include?(attr.to_s) && group.public_send(attr) != value
+      end
     end
   end
 end
