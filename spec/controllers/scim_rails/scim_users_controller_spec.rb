@@ -556,8 +556,8 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         http_login(company)
       end
 
-      it "returns scim+json content type" do
-        patch :patch_update, params: patch_params(id: 1)
+      it "returns scim+json content type when attributes param is present" do
+        patch :patch_update, params: patch_params(id: 1).merge(attributes: 'userName')
 
         expect(response.media_type).to eq "application/scim+json"
       end
@@ -565,7 +565,28 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
       it "is successful with valid credentials" do
         patch :patch_update, params: patch_params(id: 1)
 
-        expect(response.status).to eq 200
+        expect(response.status).to eq 204
+      end
+
+      context 'when attributes query parameter is present' do
+        it 'returns 200 with the user resource' do
+          patch :patch_update, params: patch_params(id: 1).merge(attributes: 'userName')
+
+          expect(response.status).to eq 200
+          expect(response.media_type).to eq 'application/scim+json'
+
+          response_body = JSON.parse(response.body)
+          expect(response_body['id']).to eq 1
+        end
+      end
+
+      context 'when attributes query parameter is absent' do
+        it 'returns 204 with no content' do
+          patch :patch_update, params: patch_params(id: 1)
+
+          expect(response.status).to eq 204
+          expect(response.body).to be_empty
+        end
       end
 
       it "returns :not_found for id that cannot be found" do
@@ -607,7 +628,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         patch :patch_update, params: patch_params(id: 1)
 
-        expect(response.status).to eq 200
+        expect(response.status).to eq 204
         expect(company.users.count).to eq 1
         user.reload
         expect(user.archived?).to eq true
@@ -620,7 +641,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
 
         patch :patch_update, params: patch_params(id: 1,  active: true)
 
-        expect(response.status).to eq 200
+        expect(response.status).to eq 204
         expect(company.users.count).to eq 1
         user.reload
         expect(user.archived?).to eq false
@@ -651,7 +672,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
             ]
           }
 
-          expect(response.status).to eq(200)
+          expect(response.status).to eq(204)
           expect(company_user.first_name).to eq(new_given_name)
           expect(company_user.last_name).to eq(new_family_name)
         end
@@ -673,7 +694,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
               ]
            }
 
-           expect(response.status).to eq(200)
+           expect(response.status).to eq(204)
            expect(company_user.email).to eq(new_email)
         end
 
@@ -702,7 +723,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
             ]
           }
 
-          expect(response.status).to eq(200)
+          expect(response.status).to eq(204)
           expect(company_user.first_name).to eq(final_given_name)
           expect(company_user.last_name).to eq(final_family_name)
         end
