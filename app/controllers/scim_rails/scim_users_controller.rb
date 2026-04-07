@@ -103,7 +103,11 @@ module ScimRails
 
       ScimRails.config.after_scim_response.call(user, "UPDATED") unless ScimRails.config.after_scim_response.nil?
 
-      json_scim_response(object: user)
+      if params[:attributes].present?
+        json_scim_response(object: user)
+      else
+        head :no_content
+      end
     end
 
     def delete
