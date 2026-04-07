@@ -122,7 +122,13 @@ module ScimRails
     private
 
     def get_multi_value_attrs(operation)
-      schema_hash = contains_square_brackets?(operation["path"]) ? multi_attr_type_to_value(process_filter_path(operation)) : {}
+      if contains_square_brackets?(operation["path"])
+        multi_attr_type_to_value(process_filter_path(operation))
+      elsif operation["value"].is_a?(Hash)
+        multi_attr_type_to_value(operation["value"])
+      else
+        {}
+      end
     end
 
     def check_allowed_parameters!
