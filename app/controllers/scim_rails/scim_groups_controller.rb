@@ -75,7 +75,11 @@ module ScimRails
     def patch_update
       ScimRails.config.before_scim_response.call(request.params) unless ScimRails.config.before_scim_response.nil?
 
-      group = groups_scope.find(params[:id])
+      group = if params[:attributes].present?
+        groups_scope.find(params[:id])
+      else
+        groups_scope_without_members.find(params[:id])
+      end
       group.update!(ScimRails.config.custom_group_attributes) if group_attributes_changed?(group)
 
       if params.key?("members")
@@ -86,7 +90,11 @@ module ScimRails
 
       ScimRails.config.after_scim_response.call(group, "UPDATED") unless ScimRails.config.after_scim_response.nil?
 
-      json_scim_group_response(object: group)
+      if params[:attributes].present?
+        json_scim_group_response(object: group)
+      else
+        head :no_content
+      end
     end
 
     def delete
@@ -276,6 +284,10 @@ module ScimRails
         @company
           .public_send(ScimRails.config.scim_groups_scope)
           .includes(ScimRails.config.scim_group_member_scope)
+    end
+
+    def groups_scope_without_members
+      @company.public_send(ScimRails.config.scim_groups_scope)
     end
 
     def all_users_scope
