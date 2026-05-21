@@ -20,8 +20,16 @@ ScimRails.configure do |config|
   config.mutable_user_attributes = [
     :first_name,
     :last_name,
-    :email
+    :email,
+    :alternate_email
   ]
+
+  config.scim_attribute_type_mappings = {
+    'emails' => {
+      'work' => :email,
+      'other' => :alternate_email
+    }
+  }
 
   config.queryable_user_attributes = {
     userName: :email,
@@ -38,6 +46,9 @@ ScimRails.configure do |config|
     emails: [
       {
         value: :email
+      },
+      {
+        value: :alternate_email
       }
     ]
   }
