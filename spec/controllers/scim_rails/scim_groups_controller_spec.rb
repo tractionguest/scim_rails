@@ -588,7 +588,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           let(:replacement_ids) { replacement_users.map{ |user| user[:id] } }
 
           context "when updating non-member attributes" do
-            after { expect(response.status).to eq(200) }
+            after { expect(response.status).to eq(204) }
 
             context "with active param not in use" do
               subject { updated_group.display_name }
@@ -646,7 +646,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_value) { [ { value: replacement_ids[0] }, { value: replacement_ids[1] } ] }
 
               it "replaces the group's member list" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(replacement_list_length)
                 expect(updated_user_ids).to match_array(replacement_ids)
               end
@@ -656,7 +656,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_value) { [] }
 
               it "clears the group's member list" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list).to be_empty
               end
             end
@@ -674,7 +674,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
                 let(:patch_value) { [ { value: new_user.id } ] }
 
                 it "adds the user to the group" do
-                  expect(response.status).to eq(200)
+                  expect(response.status).to eq(204)
                   expect(updated_user_list.length).to eq(user_list_length + 1)
                   expect(updated_user_ids).to include(new_user.id)
                 end
@@ -708,7 +708,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
                 let(:alt_patch) { patch :patch_update, params: alt_params, as: :json }
 
                 it "only adds member to group once" do
-                  expect(response.status).to eq(200)
+                  expect(response.status).to eq(204)
                   expect(updated_user_list.length).to eq(user_list_length + 1)
                   expect(updated_user_ids).to include(new_user.id)
 
@@ -721,8 +721,8 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_path) { "externalId" }
               let(:patch_value) { "10aa0369-2539-405f-b4f5-32be6ab6f88a" }
 
-              it "returns 200 and treats as attribute update" do
-                expect(response.status).to eq(200)
+              it "returns 204 and treats as attribute update" do
+                expect(response.status).to eq(204)
               end
 
               it "does not change group members" do
@@ -736,7 +736,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_value) { [ { value: new_user.id } ] }
 
               it "adds the user to the group" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(user_list_length + 1)
                 expect(updated_user_ids).to include(new_user.id)
               end
@@ -746,7 +746,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_value) { [ { value: new_user.id }, { value: new_user.id } ] }
 
               it "only adds one of the users" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(user_list_length + 1)
                 expect(updated_user_ids).to include(new_user.id)
               end
@@ -764,7 +764,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_path) { "members[value eq \"#{target_user_id}\"]" }
 
               it "removes member from group" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(user_list_length - 1)
                 expect(updated_user_ids).to_not include(target_user_id)
               end
@@ -774,7 +774,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_path) { "members[value eq \"unknown\"]" }
 
               it "does not remove anything" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(user_list_length)
               end
             end
@@ -783,7 +783,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_path) { "members" }
 
               it "clears the group's members" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list).to be_empty
               end
             end
@@ -812,7 +812,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
               let(:patch_value) { [{ value: target_user_id }] }
 
               it "removes member from group" do
-                expect(response.status).to eq(200)
+                expect(response.status).to eq(204)
                 expect(updated_user_list.length).to eq(user_list_length - 1)
                 expect(updated_user_ids).to_not include(target_user_id)
               end
@@ -847,7 +847,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           let(:patch_members) { [{ value: new_user.id }, { value: second_new_user.id }] }
 
           it "adds new users to group" do
-            expect(response.status).to eq(200)
+            expect(response.status).to eq(204)
 
             expect(company.groups.first.users).to include(new_user)
             expect(company.groups.first.users).to include(second_new_user)
@@ -858,7 +858,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           let(:patch_members) { [{ value: target_user_id, operation: "delete" }] }
 
           it "removes user from group" do
-            expect(response.status).to eq(200)
+            expect(response.status).to eq(204)
 
             expect(updated_user_ids).not_to include(target_user_id)
           end
@@ -881,7 +881,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           end
 
           it "adds and removes respective users from group" do
-            expect(response.status).to eq(200)
+            expect(response.status).to eq(204)
 
             expect(company.groups.first.users).to include(new_user)
             expect(company.groups.first.users).to include(second_new_user)
@@ -894,7 +894,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
           let(:patch_members) { [{ value: target_user_id, operation: "hamburger" }] }
 
           it "does not change the user list" do
-            expect(response.status).to eq(200)
+            expect(response.status).to eq(204)
 
             expect(updated_user_list.length).to eq(user_list_length)
           end
@@ -933,11 +933,93 @@ RSpec.describe ScimRails::ScimGroupsController, type: :controller do
         end
 
         it "successfully performs all three" do
-          expect(response.status).to eq(200)
+          expect(response.status).to eq(204)
           expect(updated_group.display_name).to eq(new_display_name)
           expect(updated_group.email).to eq(new_email)
           expect(updated_user_list.length).to eq(1)
           expect(updated_user_ids).to include(new_user.id)
+        end
+      end
+    end
+
+    context 'when authorized (no before block)' do
+      before :each do
+        http_login(company)
+      end
+
+      let(:user_list_length) { 3 }
+      let!(:user_list) { create_list(:user, user_list_length, company: company) }
+      let!(:target_group) { create(:group, users: user_list, company: company) }
+
+      context 'when attributes query parameter is present' do
+        it 'returns 200 with the group resource' do
+          patch :patch_update, params: {
+            id: target_group.id,
+            attributes: 'displayName',
+            Operations: [
+              {
+                op: 'replace',
+                value: { displayName: 'New Name' }
+              }
+            ]
+          }, as: :json
+
+          expect(response.status).to eq 200
+          expect(response.media_type).to eq 'application/scim+json'
+
+          response_body = JSON.parse(response.body)
+          expect(response_body['id']).to eq target_group.id
+          expect(response_body['displayName']).to eq 'New Name'
+        end
+      end
+
+      context 'when attributes query parameter is absent' do
+        it 'returns 204 with no content' do
+          patch :patch_update, params: {
+            id: target_group.id,
+            Operations: [
+              {
+                op: 'replace',
+                value: { displayName: 'New Name' }
+              }
+            ]
+          }, as: :json
+
+          expect(response.status).to eq 204
+          expect(response.body).to be_empty
+        end
+
+        it 'still applies the changes to the group' do
+          patch :patch_update, params: {
+            id: target_group.id,
+            Operations: [
+              {
+                op: 'replace',
+                value: { displayName: 'Updated Name' }
+              }
+            ]
+          }, as: :json
+
+          expect(response.status).to eq 204
+          expect(target_group.reload.display_name).to eq 'Updated Name'
+        end
+
+        it 'still adds members to the group' do
+          new_user = create(:user, company: company)
+
+          patch :patch_update, params: {
+            id: target_group.id,
+            Operations: [
+              {
+                op: 'add',
+                path: 'members',
+                value: [{ value: new_user.id }]
+              }
+            ]
+          }, as: :json
+
+          expect(response.status).to eq 204
+          expect(target_group.reload.users).to include(new_user)
         end
       end
     end

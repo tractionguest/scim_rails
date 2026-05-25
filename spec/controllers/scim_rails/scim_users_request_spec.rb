@@ -127,6 +127,34 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
           expect(target_person.reload.department).to eq('Sample Department')
         end
       end
+
+      context 'with multi-valued attributes in value (no filter path)' do
+        let(:work_email) { 'work@example.com' }
+        let(:other_email) { 'other@example.com' }
+        let(:params) do
+          {
+            id: target_person.id,
+            Operations: [
+              {
+                'op' => 'replace',
+                'value' => {
+                  'emails' => [
+                    { 'type' => 'other', 'value' => other_email },
+                    { 'type' => 'work', 'value' => work_email }
+                  ]
+                }
+              }
+            ]
+          }
+        end
+
+        it 'maps attributes by type, not by position' do
+          expect(resp).to eq 200
+          target_person.reload
+          expect(target_person.email).to eq(work_email)
+          expect(target_person.alternate_email).to eq(other_email)
+        end
+      end
     end
   end
 end
