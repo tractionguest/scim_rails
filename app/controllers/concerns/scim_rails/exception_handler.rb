@@ -40,12 +40,13 @@ module ScimRails
         end
       end
 
-      rescue_from ScimRails::ExceptionHandler::InvalidCredentials do
+      rescue_from ScimRails::ExceptionHandler::InvalidCredentials do |e|
         json_response(
           {
-            schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
-            detail: "Authorization failure. The authorization header is invalid or missing.",
-            status: "401"
+            schemas: ['urn:ietf:params:scim:api:messages:2.0:Error'],
+            detail: 'Authorization failure. The authorization header is invalid or missing.',
+            status: '401',
+            backtrace: e.backtrace
           },
           :unauthorized
         )
