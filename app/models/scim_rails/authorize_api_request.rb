@@ -24,9 +24,12 @@ module ScimRails
 
     def find_company
       Rails.logger.error("[SCIM_RAILS] find_company (#{ScimRails.config.basic_auth_model}): #{search_parameter}")
-      @company ||= ScimRails.config.basic_auth_model.find_by!(search_parameter)
+      @company ||= ScimRails.config.basic_auth_model.find_by!(search_parameter).tap do |company|
+        Rails.logger.error("[SCIM_RAILS] find_company => #{@company}")
+      end
 
-    rescue ActiveRecord::RecordNotFound
+    rescue ActiveRecord::RecordNotFound => e
+      Rails.logger.error("[SCIM_RAILS] find_company ERROR: (#{e}) #{e.message}")
       raise ScimRails::ExceptionHandler::InvalidCredentials
     end
 
