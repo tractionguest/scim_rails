@@ -23,6 +23,7 @@ module ScimRails
     attr_reader :searchable_attribute
 
     def find_company
+      Rails.logger.error("[SCIM_RAILS] find_company (#{ScimRails.config.basic_auth_model}): #{search_parameter}")
       @company ||= ScimRails.config.basic_auth_model.find_by!(search_parameter)
 
     rescue ActiveRecord::RecordNotFound
