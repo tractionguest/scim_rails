@@ -29,7 +29,7 @@ module ScimRails
       end
 
     rescue ActiveRecord::RecordNotFound => e
-      Rails.logger.error("[SCIM_RAILS] find_company ERROR: (#{e}) #{e.message}")
+      Rails.logger.error("[SCIM_RAILS] find_company ERROR: (#{e.class}) #{e} (search_parameter: #{search_parameter}) [uuids: #{Account.pluck(:uuid)}]")
       raise ScimRails::ExceptionHandler::InvalidCredentials
     end
 
