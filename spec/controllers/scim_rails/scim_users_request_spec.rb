@@ -122,7 +122,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
         end
 
         it "updates specific Person attribute" do
-          expect(resp).to eq 200
+          expect(resp).to eq 204
           expect(target_person.reload.first_name).to eq('Nico')
           expect(target_person.reload.department).to eq('Sample Department')
         end
@@ -149,7 +149,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
         end
 
         it 'maps attributes by type, not by position' do
-          expect(resp).to eq 200
+          expect(resp).to eq 204
           target_person.reload
           expect(target_person.email).to eq(work_email)
           expect(target_person.alternate_email).to eq(other_email)
