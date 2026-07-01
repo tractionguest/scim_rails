@@ -572,7 +572,7 @@ RSpec.describe ScimRails::ScimUsersController, type: :controller do
         it 'returns 200 with the user resource' do
           patch :patch_update, params: patch_params(id: 1).merge(attributes: 'userName')
 
-          expect(response.status).to eq 400
+          expect(response.status).to eq 200
           expect(response.media_type).to eq 'application/scim+json'
 
           response_body = JSON.parse(response.body)

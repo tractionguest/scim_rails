@@ -128,7 +128,7 @@ module ScimRails
     def get_multi_value_attrs(operation)
       if contains_square_brackets?(operation["path"])
         multi_attr_type_to_value(process_filter_path(operation))
-      elsif operation["value"].is_a?(Hash)
+      elsif operation["value"].is_a?(Hash) || operation["value"].is_a?(ActionController::Parameters)
         multi_attr_type_to_value(operation["value"])
       else
         {}
