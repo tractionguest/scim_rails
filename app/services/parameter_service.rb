@@ -11,6 +11,10 @@ module ParameterService
 
     # known
     'schemas',
+
+    # SCIM query params (RFC 7644 §3.9) — control the response, not attributes
+    'attributes',
+    'excludedAttributes',
   ].freeze
 
   # https://datatracker.ietf.org/doc/html/rfc7643#section-4
