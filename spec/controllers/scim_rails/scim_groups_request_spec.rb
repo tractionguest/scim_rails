@@ -29,7 +29,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :request do
       let!(:group_list) { create_list(:group, group_list_length, company: company) }
 
       context 'with valid request' do
-        before { get '/scim_rails/scim/v2/Groups', params: params.to_json, headers: valid_authentication_header }
+        before { get '/scim_rails/scim/v2/Groups', headers: valid_authentication_header }
 
         it 'returns a PersonGroup list' do
           expect(last_response_as_hash[:Resources].count).to eq(group_list_length)
@@ -40,7 +40,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :request do
         let!(:new_group) { create(:group, company: company, display_name: 'TEST GROUP') }
 
         context 'when filter is present and same case' do
-          before { get '/scim_rails/scim/v2/Groups?filter=displayName+eq+"TEST GROUP"', params: params.to_json, headers: valid_authentication_header }
+          before { get '/scim_rails/scim/v2/Groups?filter=displayName+eq+"TEST GROUP"', headers: valid_authentication_header }
 
           it 'returns a Group list' do
             expect(last_response_as_hash[:Resources].count).to eq(1)
@@ -49,7 +49,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :request do
         end
 
         context 'when filter is present and not the same casing' do
-          before { get '/scim_rails/scim/v2/Groups?filter=displayName+eq+"test group"', params: params.to_json, headers: valid_authentication_header }
+          before { get '/scim_rails/scim/v2/Groups?filter=displayName+eq+"test group"', headers: valid_authentication_header }
 
           it 'returns a Group list' do
             expect(last_response_as_hash[:Resources].count).to eq(1)
@@ -68,7 +68,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :request do
       let(:params) { { id: target_group.id } }
 
       context 'with valid request' do
-        before { get "/scim_rails/scim/v2/Groups/#{target_group.id}", params: params.to_json, headers: valid_authentication_header }
+        before { get "/scim_rails/scim/v2/Groups/#{target_group.id}", headers: valid_authentication_header }
 
         it 'returns a specific PersonGroup' do
           expect(last_response_as_hash[:id]).to eq(target_group.id)
@@ -77,7 +77,7 @@ RSpec.describe ScimRails::ScimGroupsController, type: :request do
       end
 
       context "with Azure requests" do
-        before { get "/scim_rails/scim/v2/Groups/#{target_group.id}?excludedAttributes=members", params: params.to_json, headers: valid_authentication_header }
+        before { get "/scim_rails/scim/v2/Groups/#{target_group.id}?excludedAttributes=members", headers: valid_authentication_header }
 
         it 'returns a specific Group' do
           expect(last_response_as_hash[:id]).to eq(target_group.id)
