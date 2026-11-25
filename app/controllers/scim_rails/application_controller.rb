@@ -7,6 +7,31 @@ module ScimRails
     before_action :authorize_request
     protect_from_forgery with: :null_session
 
+    # Rails parses the request body before rescue_from handlers run, so a
+    # body that isn't UTF-8 never reaches ExceptionHandler. Catch it here
+    # instead and answer with a SCIM error (RFC 7644 sections 3.8 and 3.12).
+    def process_action(*)
+      super
+    rescue ActionController::BadRequest => e
+      raise unless e.cause.is_a?(Rack::Utils::InvalidParameterError)
+
+      # The exception message holds the invalid value, which is personal
+      # data and may not be valid JSON, so neither is logged nor echoed.
+      logger&.warn(
+        "[ScimRails] Rejected non-UTF-8 request: #{request.method} #{request.path} " \
+        "(#{request.content_length.to_i} bytes)"
+      )
+      json_response(
+        {
+          schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+          scimType: "invalidSyntax",
+          detail: "Request body is not valid UTF-8. SCIM requests must be UTF-8 encoded (RFC 7644 section 3.8).",
+          status: "400"
+        },
+        :bad_request
+      )
+    end
+
     private
 
     def authorize_request

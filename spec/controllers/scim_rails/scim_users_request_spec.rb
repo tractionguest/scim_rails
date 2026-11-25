@@ -92,6 +92,53 @@ RSpec.describe ScimRails::ScimUsersController, type: :request do
           end
         end
       end
+
+      context 'when a name has accented characters' do
+        let(:params) { { name: { givenName: "Loïc", familyName: "Poisson" }, emails: [{ value: "loic@example.com" }] } }
+
+        it 'creates the user with the name intact' do
+          post '/scim_rails/scim/v2/Users', params: params.to_json, headers: valid_authentication_header
+
+          expect(response.status).to eq 201
+          expect(company.users.first.first_name).to eq "Loïc"
+        end
+      end
+
+      context 'when the body is not valid UTF-8' do
+        # "Loïc" encoded as ISO-8859-1: 0xEF is not a valid UTF-8 sequence on its own.
+        let(:body) { %({"name":{"givenName":"Lo\xEFc","familyName":"Poisson"},"emails":[{"value":"loic@example.com"}]}).b }
+
+        ["application/scim+json", "application/json"].each do |content_type|
+          it "returns a SCIM invalidSyntax error for #{content_type}" do
+            post '/scim_rails/scim/v2/Users',
+              params: body,
+              headers: valid_authentication_header.merge('CONTENT_TYPE': content_type)
+
+            expect(response.status).to eq 400
+            expect(response.media_type).to eq "application/scim+json"
+            expect(JSON.parse(response.body)).to eq(
+              "schemas" => ["urn:ietf:params:scim:api:messages:2.0:Error"],
+              "scimType" => "invalidSyntax",
+              "detail" => "Request body is not valid UTF-8. SCIM requests must be UTF-8 encoded (RFC 7644 section 3.8).",
+              "status" => "400"
+            )
+            expect(company.users.count).to eq 0
+          end
+        end
+      end
+    end
+
+    describe 'get' do
+      context 'when a query param is sent as both a string and an array' do
+        # Just to check the rescue ActionController::BadRequest block does not break anything
+        it 'is not reported as a non-UTF-8 request' do
+          get '/scim_rails/scim/v2/Users?filter=a&filter[]=b', headers: valid_authentication_header
+
+          expect(response.status).to eq 400
+          expect(response.media_type).not_to eq "application/scim+json"
+          expect(response.body).to include "Invalid query parameters: expected Array (got String) for param `filter'"
+        end
+      end
     end
 
     describe 'patch' do
